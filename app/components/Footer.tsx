@@ -4,12 +4,13 @@ import type { FooterQuery, HeaderQuery } from 'storefrontapi.generated';
 import { siteConfig } from '~/lib/site-config';
 import { menuUrl } from '~/lib/menu';
 import { Newsletter } from '~/components/forms/Newsletter';
+import logo from '~/assets/logo.png';
 
 export function Footer({ footer, header, publicStoreDomain, newsletterEnabled = false }: {
   footer: Promise<FooterQuery | null>; header: HeaderQuery; publicStoreDomain: string; newsletterEnabled?: boolean;
 }) {
   return <footer className="footer">
-    <div className="footer-top"><div><p className="eyebrow">MAMTA DESIGN CO.</p><h2>For the nights<br />you remember.</h2><Link className="text-link" to="/shop">Find your Chaniya <span>↗</span></Link></div>
+    <div className="footer-top"><div><img src={logo} alt="Mamta Design Co." className="footer-logo" width="48" height="48" /><p className="eyebrow">MAMTA DESIGN CO.</p><h2>For the nights<br />you remember.</h2><Link className="text-link" to="/shop">Find your Chaniya <span>↗</span></Link></div>
       <div className="footer-navigation"><nav aria-label="Explore the store"><p className="eyebrow">EXPLORE</p><Link to="/shop">Shop all</Link><Link to="/catalogue">The catalogue</Link><Link to="/collections">Collections</Link><Link to="/blogs">Journal</Link><Link to="/favorites">Your favorites</Link></nav>
         <nav aria-label="Customer care"><p className="eyebrow">HERE FOR YOU</p><Link to="/account">Your account</Link><Link to="/contact">Contact</Link><Link to="/policies">Store policies</Link>
           <Suspense><Await resolve={footer}>{(response) => response?.menu?.items.map((item) => item.url && <Link key={item.id} to={menuUrl(item.url, [publicStoreDomain, header.shop.primaryDomain.url])}>{item.title}</Link>)}</Await></Suspense>
@@ -22,6 +23,9 @@ export function Footer({ footer, header, publicStoreDomain, newsletterEnabled = 
       <span className="footer-credit-author">
         <a href="https://prathamchudasama.com" target="_blank" rel="noreferrer">Pratham Chudasama ( +91 82003 57641 )</a>
       </span>
+    </div>
+    <div className="footer-emblem-wrap" aria-hidden="true">
+      <img src={logo} alt="" className="footer-emblem" width="72" height="72" />
     </div>
     <div className="footer-wordmark" aria-hidden="true">mamta.</div>
     <div className="footer-bottom"><span>© {new Date().getUTCFullYear()} {siteConfig.brandName}</span><span>India · English</span><span>Secure checkout by Shopify</span></div>

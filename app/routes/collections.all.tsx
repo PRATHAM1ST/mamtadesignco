@@ -1,19 +1,29 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.all';
-import {getPaginationVariables} from '@shopify/hydrogen';
+import {getPaginationVariables, useNonce} from '@shopify/hydrogen';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/product-fragments';
 import {CATALOG_FILTER_FRAGMENT, getSearchSort, parseProductFilters, searchSortOptions} from '~/lib/filters';
 import {CatalogGrid} from '~/components/collection/CatalogGrid';
 import {CatalogToolbar} from '~/components/collection/CatalogToolbar';
 import {assertStorefrontSuccess} from '~/lib/storefront-errors';
-import {routeSeo} from '~/lib/seo';
+import {routeSeo, jsonLd, breadcrumbJsonLd} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data, location}) => routeSeo({
-  title: 'Shop the collection',
-  description: 'Explore the Chaniya collection from Mamta Design Co. Find your piece for the nights ahead.',
-  url: data ? `${data.origin}${location.pathname}` : undefined,
-  image: data?.catalog.nodes[0]?.featuredImage?.url,
-});
+export const meta: Route.MetaFunction = ({data, location}) =>
+  routeSeo({
+    title: 'Shop the Collection · Designer Chaniya Choli',
+    description:
+      'Explore the complete wardrobe of handcrafted Chaniya Cholis, bespoke bridal lehengas, and festive couture from Mamta Design Co.',
+    url: data ? `${data.origin}${location.pathname}` : undefined,
+    image: data?.catalog.nodes[0]?.featuredImage?.url,
+    keywords: [
+      'Shop Chaniya Choli',
+      'Navratri Collection',
+      'Designer Chaniya',
+      'Handcrafted Ethnic Wear',
+      'Mamta Design Co',
+      'Ahmedabad Choli',
+    ],
+  });
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -26,11 +36,28 @@ export async function loader({context, request}: Route.LoaderArgs) {
 }
 
 export default function AllProducts() {
-  const {catalog} = useLoaderData<typeof loader>();
+  const {catalog, origin} = useLoaderData<typeof loader>();
+  const nonce = useNonce();
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'The Chaniya Collection',
+        description: 'Explore the complete wardrobe of handcrafted Chaniya Cholis from Mamta Design Co.',
+        url: `${origin}/shop`,
+      },
+      breadcrumbJsonLd([
+        {name: 'Home', url: origin},
+        {name: 'Shop', url: `${origin}/shop`},
+      ]),
+    ],
+  };
   return <div className="catalog-page page-width">
     <header className="catalog-heading"><span className="eyebrow">The collection</span><h1>For the nights<br /><em>you live for.</em></h1><p>Find your rhythm. Find your piece.</p></header>
     <CatalogToolbar filters={catalog.productFilters} totalCount={catalog.totalCount} shownCount={catalog.nodes.length} sortOptions={searchSortOptions} />
     <CatalogGrid connection={catalog} />
+    <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: jsonLd(structuredData)}} />
   </div>;
 }
 

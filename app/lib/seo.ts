@@ -1,40 +1,164 @@
 import type {MetaDescriptor} from 'react-router';
 
-type RouteSeo = {
+export type RouteSeo = {
   title: string;
   description?: string | null;
   url?: string;
   image?: string | null;
   noindex?: boolean;
+  type?: 'website' | 'product' | 'article';
+  keywords?: string | string[];
+  price?: {
+    amount: string | number;
+    currencyCode: string;
+  };
+  availability?: string;
 };
 
-export function routeSeo({title, description, url, image, noindex}: RouteSeo): MetaDescriptor[] {
-  const fullTitle = title.includes('Mamta') ? title : `${title} | Mamta Design Co`;
+export function routeSeo({
+  title,
+  description,
+  url,
+  image,
+  noindex,
+  type = 'website',
+  keywords,
+  price,
+  availability,
+}: RouteSeo): MetaDescriptor[] {
+  const brandSuffix = 'Mamta Design Co.';
+  const cleanTitle = (title || 'Mamta Design Co.').trim();
+  const fullTitle = cleanTitle.includes('Mamta') ? cleanTitle : `${cleanTitle} | ${brandSuffix}`;
+  const defaultDesc =
+    'Handcrafted Chaniya Choli, celebratory ethnic wear, and luxury couture for Navratri and festive occasions by Mamta Design Co.';
+  const metaDesc = (description && description.trim()) || defaultDesc;
+
+  let origin = '';
+  let canonicalUrl = '';
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      origin = parsed.origin;
+      parsed.hash = '';
+      parsed.search = '';
+      canonicalUrl = parsed.href;
+    } catch {
+      canonicalUrl = url;
+    }
+  }
+
+  const defaultImage = origin ? `${origin}/og-image.png` : '/og-image.png';
+  let resolvedImage = image || defaultImage;
+  if (resolvedImage && !resolvedImage.startsWith('http') && origin) {
+    resolvedImage = `${origin}${resolvedImage.startsWith('/') ? '' : '/'}${resolvedImage}`;
+  }
+
   const meta: MetaDescriptor[] = [
     {title: fullTitle},
+    {property: 'og:site_name', content: 'Mamta Design Co.'},
+    {property: 'og:type', content: type},
     {property: 'og:title', content: fullTitle},
-    {property: 'og:type', content: 'website'},
-    {property: 'og:site_name', content: 'Mamta Design Co'},
-    {name: 'twitter:card', content: image ? 'summary_large_image' : 'summary'},
+    {property: 'og:description', content: metaDesc},
+    {name: 'description', content: metaDesc},
+    {property: 'og:locale', content: 'en_IN'},
+    {property: 'og:locale:alternate', content: 'en_US'},
+    {name: 'twitter:card', content: 'summary_large_image'},
+    {name: 'twitter:site', content: '@mamtadesignco'},
+    {name: 'twitter:creator', content: '@mamtadesignco'},
     {name: 'twitter:title', content: fullTitle},
+    {name: 'twitter:description', content: metaDesc},
+    {name: 'author', content: 'Mamta Design Co.'},
+    {name: 'geo.region', content: 'IN-GJ'},
+    {name: 'geo.placename', content: 'Ahmedabad'},
   ];
-  if (description) meta.push(
-    {name: 'description', content: description},
-    {property: 'og:description', content: description},
-    {name: 'twitter:description', content: description},
-  );
-  if (url) {
-    const canonical = new URL(url);
-    canonical.hash = '';
-    canonical.search = '';
-    meta.push({tagName: 'link', rel: 'canonical', href: canonical.href}, {property: 'og:url', content: canonical.href});
+
+  if (canonicalUrl) {
+    meta.push(
+      {tagName: 'link', rel: 'canonical', href: canonicalUrl},
+      {property: 'og:url', content: canonicalUrl},
+    );
   }
-  if (image) meta.push({property: 'og:image', content: image}, {name: 'twitter:image', content: image});
-  if (noindex) meta.push({name: 'robots', content: 'noindex, nofollow'});
+
+  if (resolvedImage) {
+    meta.push(
+      {property: 'og:image', content: resolvedImage},
+      {property: 'og:image:secure_url', content: resolvedImage},
+      {property: 'og:image:width', content: '1200'},
+      {property: 'og:image:height', content: '630'},
+      {property: 'og:image:alt', content: fullTitle},
+      {name: 'twitter:image', content: resolvedImage},
+      {name: 'twitter:image:alt', content: fullTitle},
+    );
+  }
+
+  if (type === 'product' && price) {
+    meta.push(
+      {property: 'product:price:amount', content: String(price.amount)},
+      {property: 'product:price:currency', content: price.currencyCode},
+    );
+    if (availability) {
+      meta.push({property: 'product:availability', content: availability});
+    }
+  }
+
+  if (noindex) {
+    meta.push(
+      {name: 'robots', content: 'noindex, nofollow'},
+      {name: 'googlebot', content: 'noindex, nofollow'},
+    );
+  } else {
+    meta.push(
+      {
+        name: 'robots',
+        content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+      },
+      {
+        name: 'googlebot',
+        content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+      },
+    );
+  }
+
+  const keywordList = Array.isArray(keywords)
+    ? keywords.join(', ')
+    : keywords ||
+      'Mamta Design Co, Chaniya Choli, Navratri Chaniya Choli, Designer Chaniya, Luxury Ethnic Wear, Traditional Choli, Ahmedabad Fashion, Gujarati Couture, Bridal Chaniya Choli';
+  meta.push({name: 'keywords', content: keywordList});
+
   return meta;
 }
 
 export function jsonLd(value: unknown) {
   // Escape HTML delimiters so merchant text cannot close a JSON-LD script.
-  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
+export function breadcrumbJsonLd(items: {name: string; url: string}[]) {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+export function faqJsonLd(faqs: {question: string; answer: string}[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
 }

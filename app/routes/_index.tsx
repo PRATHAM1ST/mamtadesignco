@@ -9,7 +9,25 @@ import {PRODUCT_CARD_FRAGMENT} from '~/lib/product-fragments';
 import {routeSeo} from '~/lib/seo';
 import {assertStorefrontResponse} from '~/lib/storefront-errors';
 
-export const meta: Route.MetaFunction = ({data}) => routeSeo({title: 'Mamta Design Co · The night is yours', description: 'Explore the Mamta Design Co Chaniya wardrobe for Navratri and festive dressing.', url: data?.url, image: data?.products.nodes[0]?.featuredImage?.url});
+export const meta: Route.MetaFunction = ({data}) =>
+  routeSeo({
+    title: 'Mamta Design Co · Designer Chaniya Choli & Navratri Couture',
+    description:
+      'Discover handcrafted Chaniya Choli, celebratory bridal wear, and designer Navratri couture from Mamta Design Co. Bespoke craftsmanship made in Ahmedabad, shipped worldwide.',
+    url: data?.url,
+    image: data?.products.nodes[0]?.featuredImage?.url,
+    keywords: [
+      'Mamta Design Co',
+      'Chaniya Choli',
+      'Navratri Chaniya Choli',
+      'Designer Chaniya Choli',
+      'Festive Couture',
+      'Ahmedabad Chaniya',
+      'Bridal Choli',
+      'Traditional Navratri Outfits',
+      'Indian Ethnic Wear',
+    ],
+  });
 export async function loader({context, request}: Route.LoaderArgs) {
   const editorial = context.storefront.query(EDITORIAL_QUERY, {cache: context.storefront.CacheLong()})
     .then((result) => {assertStorefrontResponse(result.errors, 'Homepage editorial'); return {result, error: false};})

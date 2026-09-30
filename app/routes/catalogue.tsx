@@ -20,10 +20,18 @@ import {assertStorefrontResponse} from '~/lib/storefront-errors';
 
 export const meta: Route.MetaFunction = ({data}) =>
   routeSeo({
-    title: 'The catalogue · Mamta Design Co',
+    title: 'The Catalogue · Editorial Lookbook',
     description:
-      'An editorial view of the Mamta Design Co Chaniya wardrobe.',
+      'An editorial lookbook of the Mamta Design Co Chaniya wardrobe. High craft, expressive silhouettes, and celebratory attire.',
     url: data?.url,
+    image: data?.products?.nodes[0]?.featuredImage?.url,
+    keywords: [
+      'Mamta Design Co Catalogue',
+      'Chaniya Lookbook',
+      'Navratri Editorial',
+      'Luxury Chaniya Choli',
+      'Designer Choli Portfolio',
+    ],
   });
 
 /* =========================================================

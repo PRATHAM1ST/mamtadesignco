@@ -13,6 +13,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
+import logo from '~/assets/logo.png';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -72,7 +73,14 @@ export function links() {
       rel: 'preconnect',
       href: 'https://shop.app',
     },
+    {rel: 'icon', href: '/favicon.ico', sizes: 'any'},
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    {rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png'},
+    {rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png'},
+    {rel: 'icon', type: 'image/png', sizes: '48x48', href: '/favicon-48x48.png'},
+    {rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png'},
+    {rel: 'apple-touch-icon-precomposed', href: '/apple-touch-icon-precomposed.png'},
+    {rel: 'manifest', href: '/site.webmanifest'},
     {rel: 'preload', href: '/fonts/manrope-latin.woff2', as: 'font', type: 'font/woff2', crossOrigin: 'anonymous'},
   ];
 }
@@ -166,6 +174,11 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="theme-color" content="#121212" />
+        <meta name="msapplication-TileColor" content="#121212" />
+        <meta name="msapplication-TileImage" content="/android-chrome-192x192.png" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="format-detection" content="telephone=no" />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         <link rel="stylesheet" href={commerceStyles}/>
@@ -204,8 +217,40 @@ export default function App() {
       </PageLayout>
       <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: jsonLd({
         '@context': 'https://schema.org', '@graph': [
-          {'@type': 'Organization', name: data.header.shop.name, url: data.origin},
-          {'@type': 'WebSite', name: data.header.shop.name, url: data.origin, potentialAction: {'@type': 'SearchAction', target: `${data.origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string'}},
+          {
+            '@type': 'Organization',
+            '@id': `${data.origin}/#organization`,
+            name: data.header?.shop?.name || siteConfig.brandName,
+            legalName: 'Mamta Design Co.',
+            url: data.origin,
+            logo: `${data.origin}/logo.png`,
+            image: `${data.origin}/og-image.png`,
+            description: 'Handcrafted Chaniya Choli, celebratory ethnic wear, and luxury couture for Navratri and festive occasions.',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: 'Ahmedabad',
+              addressRegion: 'Gujarat',
+              addressCountry: 'IN'
+            },
+            contactPoint: {
+              '@type': 'ContactPoint',
+              contactType: 'customer service',
+              areaServed: 'IN',
+              availableLanguage: ['en', 'hi', 'gu']
+            }
+          },
+          {
+            '@type': 'WebSite',
+            '@id': `${data.origin}/#website`,
+            name: data.header?.shop?.name || siteConfig.brandName,
+            url: data.origin,
+            publisher: {'@id': `${data.origin}/#organization`},
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: `${data.origin}/search?q={search_term_string}`,
+              'query-input': 'required name=search_term_string'
+            }
+          },
         ],
       })}}/>
     </Analytics.Provider>
@@ -225,6 +270,7 @@ export function ErrorBoundary() {
 
   return (
     <div className="route-error">
+      <img src={logo} alt="Mamta Design Co." className="error-logo" width="60" height="60" />
       <p className="eyebrow">MAMTA DESIGN CO. · {errorStatus}</p>
       <h1>{errorStatus === 404 ? 'A different direction.' : 'A moment, please.'}</h1>
       <p>{errorMessage}</p>

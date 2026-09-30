@@ -6,6 +6,7 @@ import {useAside} from './Aside';
 import {Icon} from './ui/Icon';
 import {siteConfig} from '~/lib/site-config';
 import {menuUrl} from '~/lib/menu';
+import logo from '~/assets/logo.png';
 
 interface HeaderProps {
   header: HeaderQuery; cart: Promise<CartApiQueryFragment | null>;
@@ -26,7 +27,11 @@ export function Header({header, cart, isLoggedIn, publicStoreDomain}: HeaderProp
     <div className="header-left"><button className="icon-button" aria-label="Open navigation" onClick={() => open('mobile')}><Icon name="menu"/></button>
       <HeaderMenu menu={header.menu} viewport="desktop" primaryDomainUrl={header.shop.primaryDomain.url} publicStoreDomain={publicStoreDomain}/>
     </div>
-    <Link to="/" className="wordmark" aria-label={`${siteConfig.brandName} home`}><span>MAMTA</span><small>DESIGN CO.</small></Link>
+    <Link to="/" className="wordmark" aria-label={`${siteConfig.brandName} home`}>
+      <img src={logo} alt="" className="brand-logo" width="34" height="34" />
+      <span>MAMTA</span>
+      <small>DESIGN CO.</small>
+    </Link>
     <nav className="header-ctas" aria-label="Your account and shopping bag">
       <a href="/search" className="icon-button" aria-label="Search" onClick={(event) => {event.preventDefault(); open('search');}}><Icon name="search"/></a>
       <Link to="/account" className="icon-button account-link" aria-label="Your account"><Icon name="user"/><Suspense><Await resolve={isLoggedIn} errorElement={null}>{(loggedIn) => loggedIn ? <span className="account-dot"/> : null}</Await></Suspense></Link>
@@ -47,7 +52,10 @@ export function HeaderMenu({menu, viewport, primaryDomainUrl, publicStoreDomain}
       <NavLink className="header-menu-item" to={menuUrl(item.url, domains)} onClick={close} end={item.url.endsWith('/')} prefetch="intent">{item.title}</NavLink>
       {!!item.items.length && <details className="menu-children"><summary>Explore {item.title}<Icon name="chevron"/></summary><div>{item.items.map((child) => child.url && <Link key={child.id} to={menuUrl(child.url, domains)} onClick={close}>{child.title}</Link>)}</div></details>}
     </div>)}
-    {viewport === 'mobile' && <div className="menu-extra"><Link to="/catalogue" onClick={close}>The catalogue <Icon name="arrow"/></Link><Link to="/account" onClick={close}>Your account</Link><Link to="/policies" onClick={close}>Customer care</Link><p className="eyebrow">THE NIGHT IS YOURS.</p></div>}
+    {viewport === 'mobile' && <div className="menu-extra">
+      <div className="mobile-menu-brand"><img src={logo} alt="Mamta Design Co." width="42" height="42" /></div>
+      <Link to="/catalogue" onClick={close}>The catalogue <Icon name="arrow"/></Link><Link to="/account" onClick={close}>Your account</Link><Link to="/policies" onClick={close}>Customer care</Link><p className="eyebrow">THE NIGHT IS YOURS.</p>
+    </div>}
   </nav>;
 }
 function CartCount() {

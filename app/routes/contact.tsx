@@ -3,10 +3,24 @@ import {data, Form, Link, useActionData, useLoaderData, useNavigation} from 'rea
 import type {Route} from './+types/contact';
 import {integrationEnabled, sameOriginRequest, submitIntegration, validEmail} from '~/lib/integrations.server';
 import {sanitizeHtml, plainText} from '~/lib/html';
-import {routeSeo} from '~/lib/seo';
+import {routeSeo, jsonLd, breadcrumbJsonLd} from '~/lib/seo';
 import {siteConfig} from '~/lib/site-config';
+import {useNonce} from '@shopify/hydrogen';
 
-export const meta: Route.MetaFunction = ({data}) => routeSeo({title: 'Contact us', description: 'Get in touch with Mamta Design Co.', url: data?.url});
+export const meta: Route.MetaFunction = ({data}) =>
+  routeSeo({
+    title: 'Contact Us · Customer Care & Consultation',
+    description:
+      'Get in touch with the Mamta Design Co team in Ahmedabad. Inquiries about bespoke fitting, bridal consultation, orders, and worldwide delivery.',
+    url: data?.url,
+    keywords: [
+      'Contact Mamta Design Co',
+      'Bridal Consultation Ahmedabad',
+      'Chaniya Choli inquiries',
+      'Customer Care Mamta',
+      'Custom fitting',
+    ],
+  });
 export async function loader({context, request}: Route.LoaderArgs) {
   const {page, shop, errors} = await context.storefront.query(CONTACT_PAGE_QUERY, {cache: context.storefront.CacheLong()});
   assertStorefrontResponse(errors, 'Content');

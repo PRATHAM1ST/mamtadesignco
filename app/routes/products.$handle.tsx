@@ -14,13 +14,30 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {PRODUCT_QUERY, variantGid} from '~/lib/product';
 import {PRODUCT_CARD_FRAGMENT} from '~/lib/product-fragments';
 import {sanitizeHtml} from '~/lib/html';
+import {routeSeo, breadcrumbJsonLd, jsonLd as escapeJsonLd} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  if (!data) return [{title: 'Piece not found | Mamta Design Co.'}, {name: 'robots', content: 'noindex'}];
-  const title = `${data.product.seo.title || data.product.title} | Mamta Design Co.`;
-  const description = data.product.seo.description || data.product.description.slice(0, 160);
-  const image = data.product.selectedOrFirstAvailableVariant?.image?.url;
-  return [{title}, {name: 'description', content: description}, {rel: 'canonical', href: data.canonical}, {property: 'og:type', content: 'product'}, {property: 'og:title', content: title}, {property: 'og:description', content: description}, {property: 'og:url', content: data.canonical}, ...(image ? [{property: 'og:image', content: image}, {name: 'twitter:card', content: 'summary_large_image'}] : [])];
+  if (!data) return routeSeo({title: 'Piece not found', noindex: true});
+  const variant = data.product.selectedOrFirstAvailableVariant;
+  return routeSeo({
+    title: data.product.seo.title || data.product.title,
+    description: data.product.seo.description || data.product.description.slice(0, 160),
+    url: data.canonical,
+    image: variant?.image?.url || data.product.media.nodes[0]?.previewImage?.url,
+    type: 'product',
+    price: variant?.price ? {amount: variant.price.amount, currencyCode: variant.price.currencyCode} : undefined,
+    availability: variant?.availableForSale ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    keywords: [
+      data.product.title,
+      'Mamta Design Co',
+      data.product.vendor || 'Mamta Design Co',
+      'Designer Chaniya Choli',
+      'Navratri Outfit',
+      'Handcrafted Chaniya Choli',
+      'Festive Couture',
+      'Ahmedabad Designer Wear',
+    ],
+  });
 };
 
 export async function loader({context, params, request}: Route.LoaderArgs) {
@@ -72,11 +89,47 @@ export default function Product() {
     observer.observe(purchase.current);
     return () => observer.disconnect();
   }, []);
-  const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'Product', name: product.title,
-    description: product.description, url: canonical,
-    image: product.media.nodes.filter((media) => media.__typename === 'MediaImage').map((media) => media.previewImage?.url).filter(Boolean),
-    ...(variant ? {sku: variant.sku || undefined, offers: {'@type': 'Offer', price: variant.price.amount, priceCurrency: variant.price.currencyCode, availability: variant.availableForSale ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock', url: canonical}} : {}),
+  const productImages = product.media.nodes
+    .filter((media) => media.__typename === 'MediaImage')
+    .map((media) => media.previewImage?.url)
+    .filter(Boolean);
+  const origin = new URL(canonical).origin;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Product',
+        '@id': `${canonical}#product`,
+        name: product.title,
+        description: product.description,
+        url: canonical,
+        image: productImages.length ? productImages : [variant?.image?.url].filter(Boolean),
+        brand: {'@type': 'Brand', name: product.vendor || 'Mamta Design Co.'},
+        category: 'Traditional & Ethnic Wear > Chaniya Choli',
+        itemCondition: 'https://schema.org/NewCondition',
+        ...(variant
+          ? {
+              sku: variant.sku || product.handle,
+              offers: {
+                '@type': 'Offer',
+                price: variant.price.amount,
+                priceCurrency: variant.price.currencyCode,
+                availability: variant.availableForSale
+                  ? 'https://schema.org/InStock'
+                  : 'https://schema.org/OutOfStock',
+                url: canonical,
+                priceValidUntil: '2027-12-31',
+                seller: {'@type': 'Organization', name: 'Mamta Design Co.'},
+              },
+            }
+          : {}),
+      },
+      breadcrumbJsonLd([
+        {name: 'Home', url: origin},
+        {name: 'Shop', url: `${origin}/shop`},
+        {name: product.title, url: canonical},
+      ]),
+    ],
   };
   return (
     <>
@@ -106,7 +159,7 @@ export default function Product() {
         <RecentlyViewed productId={product.id} />
       </div>
       {showSticky && <div className="mobile-purchase-bar"><div><span>{variant?.title === 'Default Title' ? product.title : variant?.title || 'Choose a selection'}</span><ProductPrice price={variant?.price} /></div><AddToCartButton disabled={!variant?.availableForSale} onSuccess={() => open('cart')} lines={variant ? [{merchandiseId: variant.id, quantity: 1, selectedVariant: variant}] : []}>{variant?.availableForSale ? 'Add to bag' : 'Sold out'}</AddToCartButton></div>}
-      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd).replace(/</g, '\u003c')}} />
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: escapeJsonLd(structuredData)}} />
       <Analytics.ProductView data={{products: [{id: product.id, title: product.title, price: variant?.price.amount || '0', vendor: product.vendor, variantId: variant?.id || '', variantTitle: variant?.title || '', quantity: 1}]}} />
     </>
   );
