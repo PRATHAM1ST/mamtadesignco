@@ -109,13 +109,6 @@ export default function Homepage() {
             </div>
           )}
         </div>
-        <a
-          href="#the-wardrobe"
-          className="hero-scroll"
-          aria-label="Scroll to the wardrobe"
-        >
-          EXPLORE BELOW <span>↓</span>
-        </a>
       </section>
       <div className="editorial-strip">
         <span>AN EXPRESSION OF YOU.</span>
