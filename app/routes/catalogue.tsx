@@ -4,6 +4,7 @@ import {
   Image,
   Money,
   getPaginationVariables,
+  useNonce,
 } from '@shopify/hydrogen';
 
 import type {Route} from './+types/catalogue';
@@ -11,7 +12,7 @@ import type {Route} from './+types/catalogue';
 import {EditorialMotion} from '~/components/motion/EditorialMotion';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {Icon} from '~/components/ui/Icon';
-import {routeSeo} from '~/lib/seo';
+import {routeSeo, jsonLd, breadcrumbJsonLd} from '~/lib/seo';
 import {assertStorefrontResponse} from '~/lib/storefront-errors';
 
 /* =========================================================
@@ -113,8 +114,26 @@ const imageStyle: CSSProperties = {
 ========================================================= */
 
 export default function Catalogue() {
-  const {products, lookbook} =
+  const {products, lookbook, url} =
     useLoaderData<typeof loader>();
+  const nonce = useNonce();
+  const origin = new URL(url).origin;
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'The Catalogue · Lookbook & Celebratory Wardrobe',
+        description:
+          'An editorial lookbook of the Mamta Design Co Chaniya wardrobe. High craft, expressive silhouettes, and celebratory attire.',
+        url,
+      },
+      breadcrumbJsonLd([
+        {name: 'Home', url: origin},
+        {name: 'The Catalogue', url},
+      ]),
+    ],
+  };
 
   return (
     <EditorialMotion>
@@ -325,6 +344,11 @@ export default function Catalogue() {
           </div>
         )}
       </div>
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{__html: jsonLd(structuredData)}}
+      />
     </EditorialMotion>
   );
 }

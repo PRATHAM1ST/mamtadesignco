@@ -28,9 +28,11 @@ export function Header({header, cart, isLoggedIn, publicStoreDomain}: HeaderProp
       <HeaderMenu menu={header.menu} viewport="desktop" primaryDomainUrl={header.shop.primaryDomain.url} publicStoreDomain={publicStoreDomain}/>
     </div>
     <Link to="/" className="wordmark" aria-label={`${siteConfig.brandName} home`}>
-      <img src={logo} alt="" className="brand-logo" width="34" height="34" />
-      <span>MAMTA</span>
-      <small>DESIGN CO.</small>
+      <img src={logo} alt="Logo" className="brand-logo" width="64" height="64" />
+      <div className='logo-text'>
+        <span>MAMTA</span>
+        <small>DESIGN CO.</small>
+      </div>
     </Link>
     <nav className="header-ctas" aria-label="Your account and shopping bag">
       <a href="/search" className="icon-button" aria-label="Search" onClick={(event) => {event.preventDefault(); open('search');}}><Icon name="search"/></a>

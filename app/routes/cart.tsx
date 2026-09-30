@@ -3,8 +3,9 @@ import type {Route} from './+types/cart';
 import {CartForm, type CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {CartFeedback} from '~/components/cart/CartFeedback';
+import {routeSeo} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => [{title: 'Your bag | Mamta Design Co.'}, {name: 'robots', content: 'noindex, nofollow'}];
+export const meta: Route.MetaFunction = () => routeSeo({title: 'Your bag', noindex: true});
 export const headers: HeadersFunction = ({actionHeaders, loaderHeaders}) => {
   const headers = new Headers(actionHeaders.get('Set-Cookie') ? actionHeaders : loaderHeaders);
   headers.set('Cache-Control', 'private, no-store');

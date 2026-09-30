@@ -22,7 +22,11 @@ export const meta: Route.MetaFunction = ({data}) =>
 export async function loader({context, request}: Route.LoaderArgs) {
   const {metaobjects, errors} = await context.storefront.query(FAQ_QUERY, {cache: context.storefront.CacheLong()});
   assertStorefrontResponse(errors, 'Content');
-  const entries = metaobjects.nodes.map(node => ({id: node.id, question: node.question?.value, answer: node.answer?.value})).filter(entry => entry.question && entry.answer);
+  const entries: {id: string; question: string; answer: string}[] = metaobjects.nodes.flatMap((node) =>
+    node.question?.value && node.answer?.value
+      ? [{id: node.id, question: node.question.value, answer: node.answer.value}]
+      : [],
+  );
   return {entries, url: request.url};
 }
 export default function Faq() {

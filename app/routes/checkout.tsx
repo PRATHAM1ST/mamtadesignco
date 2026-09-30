@@ -1,7 +1,8 @@
 import {data, redirect, Form, Link, useActionData, useNavigation} from 'react-router';
 import type {Route} from './+types/checkout';
+import {routeSeo} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => [{title: 'Checkout | Mamta Design Co.'}, {name: 'robots', content: 'noindex, nofollow'}];
+export const meta: Route.MetaFunction = () => routeSeo({title: 'Checkout', noindex: true});
 
 export async function action({request, context}: Route.ActionArgs) {
   const fail = (error: string, status = 422) => data({error}, {status, headers: {'Cache-Control': 'private, no-store'}});

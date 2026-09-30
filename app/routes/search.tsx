@@ -9,10 +9,12 @@ import {assertStorefrontSuccess} from '~/lib/storefront-errors';
 import {routeSeo} from '~/lib/seo';
 import {SearchContentResults} from '~/components/search/SearchContentResults';
 
-export const meta: Route.MetaFunction = ({data}) => [
-  ...routeSeo({title: data?.term ? `“${data.term}” — Search` : 'Search', description: 'Search the collection, stories and pages from Mamta Design Co.'}),
-  {name: 'robots', content: 'noindex,follow'},
-];
+export const meta: Route.MetaFunction = ({data}) =>
+  routeSeo({
+    title: data?.term ? `“${data.term}” · Search` : 'Search',
+    description: 'Search the collection, stories and pages from Mamta Design Co.',
+    noindex: true,
+  });
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
