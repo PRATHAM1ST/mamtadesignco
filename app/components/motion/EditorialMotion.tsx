@@ -2,8 +2,10 @@ import {useRef} from 'react';
 import {useGSAP} from '@gsap/react';
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(useGSAP, ScrollTrigger);
+}
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
 export function EditorialMotion({children}: {children: React.ReactNode}) {
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(() => {

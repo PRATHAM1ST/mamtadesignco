@@ -4,8 +4,10 @@ import {ReactLenis, useLenis} from 'lenis/react';
 import type {LenisRef} from 'lenis/react';
 import {gsap} from 'gsap';
 import {ScrollTrigger} from 'gsap/ScrollTrigger';
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
-gsap.registerPlugin(ScrollTrigger);
 export function ScrollExperience() {
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
