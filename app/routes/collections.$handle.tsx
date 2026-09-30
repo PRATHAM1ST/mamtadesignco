@@ -1,161 +1,59 @@
-import {redirect, useLoaderData} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {Analytics, getPaginationVariables, Image} from '@shopify/hydrogen';
+import {PRODUCT_CARD_FRAGMENT} from '~/lib/product-fragments';
+import {CATALOG_FILTER_FRAGMENT, collectionSortOptions, getCollectionSort, parseProductFilters} from '~/lib/filters';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {ProductItem} from '~/components/ProductItem';
-import type {ProductItemFragment} from 'storefrontapi.generated';
+import {CatalogGrid} from '~/components/collection/CatalogGrid';
+import {CatalogToolbar} from '~/components/collection/CatalogToolbar';
+import {assertStorefrontSuccess} from '~/lib/storefront-errors';
+import {routeSeo} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
-};
+export const meta: Route.MetaFunction = ({data}) => routeSeo({
+  title: data?.collection.seo.title || data?.collection.title || 'Collection',
+  description: data?.collection.seo.description || data?.collection.description || 'Explore the collection from Mamta Design Co.',
+  url: data ? `${data.origin}/collections/${data.collection.handle}` : undefined,
+  image: data?.collection.image?.url,
+});
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
-  const {handle} = params;
-  const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+export async function loader({context, params, request}: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const {collection, errors} = await context.storefront.query(COLLECTION_QUERY, {
+    variables: {handle: params.handle, ...getPaginationVariables(request, {pageBy: 12}), ...getCollectionSort(url.searchParams.get('sort')), filters: parseProductFilters(url.searchParams)},
+    cache: context.storefront.CacheShort(),
   });
-
-  if (!handle) {
-    throw redirect('/collections');
-  }
-
-  const [{collection}] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
-    }),
-  ]);
-
-  if (!collection) {
-    throw new Response(`Collection ${handle} not found`, {
-      status: 404,
-    });
-  }
-
-  // The API handle might be localized, so redirect to the localized handle
-  redirectIfHandleIsLocalized(request, {handle, data: collection});
-
-  return {
-    collection,
-  };
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
+  assertStorefrontSuccess(errors, 'MerchandisingCollection');
+  if (!collection) throw new Response('This collection could not be found.', {status: 404});
+  redirectIfHandleIsLocalized(request, {handle: params.handle, data: collection});
+  return {collection, origin: url.origin};
 }
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
-
-  return (
-    <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection<ProductItemFragment>
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
-      <Analytics.CollectionView
-        data={{
-          collection: {
-            id: collection.id,
-            handle: collection.handle,
-          },
-        }}
-      />
-    </div>
-  );
+  return <div className="catalog-page page-width">
+    <header className={`catalog-heading ${collection.image ? 'has-image' : ''}`}>
+      <div><span className="eyebrow">The collection</span><h1>{collection.title}</h1>{collection.description && <p>{collection.description}</p>}</div>
+      {collection.image && <Image className="catalog-cover" data={collection.image} alt={collection.image.altText || collection.title} sizes="(min-width: 768px) 35vw, 100vw" aspectRatio="4/3" loading="eager" />}
+    </header>
+    <CatalogToolbar filters={collection.products.filters} shownCount={collection.products.nodes.length} sortOptions={collectionSortOptions} />
+    <CatalogGrid connection={collection.products} />
+    <Analytics.CollectionView data={{collection: {id: collection.id, handle: collection.handle}}} />
+  </div>;
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
-    amount
-    currencyCode
-  }
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    featuredImage {
-      id
-      altText
-      url
-      width
-      height
-    }
-    priceRange {
-      minVariantPrice {
-        ...MoneyProductItem
-      }
-      maxVariantPrice {
-        ...MoneyProductItem
+const COLLECTION_QUERY = `#graphql
+  query MerchandisingCollection($handle: String!, $country: CountryCode, $language: LanguageCode, $first: Int, $last: Int, $startCursor: String, $endCursor: String, $filters: [ProductFilter!], $sortKey: ProductCollectionSortKeys!, $reverse: Boolean!) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      id handle title description seo { title description }
+      image { url altText width height }
+      products(first: $first, last: $last, before: $startCursor, after: $endCursor, filters: $filters, sortKey: $sortKey, reverse: $reverse) {
+        filters { ...CatalogFilter }
+        nodes { ...ProductCard }
+        pageInfo { hasPreviousPage hasNextPage startCursor endCursor }
       }
     }
   }
+  ${PRODUCT_CARD_FRAGMENT}
+  ${CATALOG_FILTER_FRAGMENT}
 ` as const;
 
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
-const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
-  query Collection(
-    $handle: String!
-    $country: CountryCode
-    $language: LanguageCode
-    $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
-  ) @inContext(country: $country, language: $language) {
-    collection(handle: $handle) {
-      id
-      handle
-      title
-      description
-      products(
-        first: $first,
-        last: $last,
-        before: $startCursor,
-        after: $endCursor
-      ) {
-        nodes {
-          ...ProductItem
-        }
-        pageInfo {
-          hasPreviousPage
-          hasNextPage
-          endCursor
-          startCursor
-        }
-      }
-    }
-  }
-` as const;

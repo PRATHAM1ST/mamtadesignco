@@ -1,516 +1,100 @@
-import type {CustomerAddressInput} from '@shopify/hydrogen/customer-account-api-types';
-import type {
-  AddressFragment,
-  CustomerFragment,
-} from 'customer-accountapi.generated';
-import {
-  data,
-  Form,
-  useActionData,
-  useNavigation,
-  useOutletContext,
-  type Fetcher,
-} from 'react-router';
+﻿import type {CustomerAddressInput} from '@shopify/hydrogen/customer-account-api-types';
+import type {AddressFragment, CustomerFragment} from 'customer-accountapi.generated';
+import {data, useFetcher, useOutletContext} from 'react-router';
+import {useId} from 'react';
 import type {Route} from './+types/account.addresses';
-import {
-  UPDATE_ADDRESS_MUTATION,
-  DELETE_ADDRESS_MUTATION,
-  CREATE_ADDRESS_MUTATION,
-} from '~/graphql/customer-account/CustomerAddressMutations';
+import {UPDATE_ADDRESS_MUTATION, DELETE_ADDRESS_MUTATION, CREATE_ADDRESS_MUTATION} from '~/graphql/customer-account/CustomerAddressMutations';
+import {routeSeo} from '~/lib/seo';
+import {sameOriginRequest} from '~/lib/integrations.server';
+import {privateAccountRequest} from '~/lib/account-private.server';
 
-export type ActionResponse = {
-  addressId?: string | null;
-  createdAddress?: AddressFragment;
-  defaultAddress?: string | null;
-  deletedAddress?: string | null;
-  error: Record<AddressFragment['id'], string> | null;
-  updatedAddress?: AddressFragment;
-};
-
-export const meta: Route.MetaFunction = () => {
-  return [{title: 'Addresses'}];
-};
-
+export const meta: Route.MetaFunction = () => routeSeo({title: 'Your addresses', noindex: true});
+export function headers() { return {'Cache-Control': 'private, no-store'}; }
 export async function loader({context}: Route.LoaderArgs) {
-  context.customerAccount.handleAuthStatus();
-
-  return {};
+  await privateAccountRequest(context.customerAccount.handleAuthStatus());
+  return data({}, {headers: {'Cache-Control': 'private, no-store'}});
 }
 
+const addressFields = [
+  {key: 'firstName', label: 'First name', autocomplete: 'given-name', required: true},
+  {key: 'lastName', label: 'Last name', autocomplete: 'family-name', required: true},
+  {key: 'company', label: 'Company (optional)', autocomplete: 'organization'},
+  {key: 'address1', label: 'Address', autocomplete: 'address-line1', required: true},
+  {key: 'address2', label: 'Apartment, building or landmark (optional)', autocomplete: 'address-line2'},
+  {key: 'city', label: 'City', autocomplete: 'address-level2', required: true},
+  {key: 'zoneCode', label: 'State / province code', autocomplete: 'address-level1', required: true},
+  {key: 'zip', label: 'PIN / postal code', autocomplete: 'postal-code', required: true},
+  {key: 'territoryCode', label: 'Country code (for example, IN)', autocomplete: 'country', required: true},
+  {key: 'phoneNumber', label: 'Phone (optional)', autocomplete: 'tel'},
+] as const;
+
 export async function action({request, context}: Route.ActionArgs) {
-  const {customerAccount} = context;
-
+  const headers = {'Cache-Control': 'private, no-store'};
+  const failure = (error: string, status = 400) => data({error, success: false}, {status, headers});
+  if (!['POST', 'PUT', 'DELETE'].includes(request.method)) return failure('Method not allowed.', 405);
+  if (!sameOriginRequest(request)) return failure('This request could not be accepted.', 403);
+  if (!await context.customerAccount.isLoggedIn()) return failure('Your session has ended. Please sign in again.', 401);
+  const form = await request.formData();
+  const intent = String(form.get('intent') || form.get('_intent') || (request.method === 'POST' ? 'create' : request.method === 'PUT' ? 'update' : 'delete'));
+  if (!['create', 'update', 'delete'].includes(intent)) return failure('Please select a valid address action.');
+  const addressId = String(form.get('addressId') || '');
+  if (intent !== 'create' && !addressId.startsWith('gid://shopify/CustomerAddress/')) return failure('Please select a valid saved address.');
+  const address: CustomerAddressInput = {};
+  for (const field of addressFields) {
+    const value = String(form.get(field.key) || '').trim();
+    if (value.length > 255) return failure(`Please shorten your ${field.label.toLowerCase()}.`);
+    if (intent !== 'delete' && 'required' in field && field.required && !value) return failure(`Please enter your ${field.label.toLowerCase()}.`);
+    address[field.key] = value;
+  }
+  if (intent !== 'delete' && !/^[A-Z]{2}$/.test(address.territoryCode || '')) return failure('Please enter a two-letter country code, such as IN.');
+  const variables = {address, addressId, defaultAddress: form.get('defaultAddress') === 'on', language: context.customerAccount.i18n.language};
   try {
-    const form = await request.formData();
-
-    const addressId = form.has('addressId')
-      ? String(form.get('addressId'))
-      : null;
-    if (!addressId) {
-      throw new Error('You must provide an address id.');
+    let userErrors: Array<{message: string}> | undefined;
+    if (intent === 'create') {
+      const result = await context.customerAccount.mutate(CREATE_ADDRESS_MUTATION, {variables});
+      if (result.errors?.length) throw new Error('Address create GraphQL failure');
+      userErrors = result.data?.customerAddressCreate?.userErrors;
+      if (!userErrors?.length && !result.data?.customerAddressCreate?.customerAddress) throw new Error('Address create response missing');
+    } else if (intent === 'update') {
+      const result = await context.customerAccount.mutate(UPDATE_ADDRESS_MUTATION, {variables});
+      if (result.errors?.length) throw new Error('Address update GraphQL failure');
+      userErrors = result.data?.customerAddressUpdate?.userErrors;
+      if (!userErrors?.length && !result.data?.customerAddressUpdate?.customerAddress) throw new Error('Address update response missing');
+    } else {
+      const result = await context.customerAccount.mutate(DELETE_ADDRESS_MUTATION, {variables: {addressId, language: variables.language}});
+      if (result.errors?.length) throw new Error('Address delete GraphQL failure');
+      userErrors = result.data?.customerAddressDelete?.userErrors;
+      if (!userErrors?.length && !result.data?.customerAddressDelete?.deletedAddressId) throw new Error('Address delete response missing');
     }
-
-    // this will ensure redirecting to login never happen for mutatation
-    const isLoggedIn = await customerAccount.isLoggedIn();
-    if (!isLoggedIn) {
-      return data(
-        {error: {[addressId]: 'Unauthorized'}},
-        {
-          status: 401,
-        },
-      );
-    }
-
-    const defaultAddress = form.has('defaultAddress')
-      ? String(form.get('defaultAddress')) === 'on'
-      : false;
-    const address: CustomerAddressInput = {};
-    const keys: (keyof CustomerAddressInput)[] = [
-      'address1',
-      'address2',
-      'city',
-      'company',
-      'territoryCode',
-      'firstName',
-      'lastName',
-      'phoneNumber',
-      'zoneCode',
-      'zip',
-    ];
-
-    for (const key of keys) {
-      const value = form.get(key);
-      if (typeof value === 'string') {
-        address[key] = value;
-      }
-    }
-
-    switch (request.method) {
-      case 'POST': {
-        // handle new address creation
-        try {
-          const {data, errors} = await customerAccount.mutate(
-            CREATE_ADDRESS_MUTATION,
-            {
-              variables: {
-                address,
-                defaultAddress,
-                language: customerAccount.i18n.language,
-              },
-            },
-          );
-
-          if (errors?.length) {
-            throw new Error(errors[0].message);
-          }
-
-          if (data?.customerAddressCreate?.userErrors?.length) {
-            throw new Error(data?.customerAddressCreate?.userErrors[0].message);
-          }
-
-          if (!data?.customerAddressCreate?.customerAddress) {
-            throw new Error('Customer address create failed.');
-          }
-
-          return {
-            error: null,
-            createdAddress: data?.customerAddressCreate?.customerAddress,
-            defaultAddress,
-          };
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            return data(
-              {error: {[addressId]: error.message}},
-              {
-                status: 400,
-              },
-            );
-          }
-          return data(
-            {error: {[addressId]: error}},
-            {
-              status: 400,
-            },
-          );
-        }
-      }
-
-      case 'PUT': {
-        // handle address updates
-        try {
-          const {data, errors} = await customerAccount.mutate(
-            UPDATE_ADDRESS_MUTATION,
-            {
-              variables: {
-                address,
-                addressId: decodeURIComponent(addressId),
-                defaultAddress,
-                language: customerAccount.i18n.language,
-              },
-            },
-          );
-
-          if (errors?.length) {
-            throw new Error(errors[0].message);
-          }
-
-          if (data?.customerAddressUpdate?.userErrors?.length) {
-            throw new Error(data?.customerAddressUpdate?.userErrors[0].message);
-          }
-
-          if (!data?.customerAddressUpdate?.customerAddress) {
-            throw new Error('Customer address update failed.');
-          }
-
-          return {
-            error: null,
-            updatedAddress: address,
-            defaultAddress,
-          };
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            return data(
-              {error: {[addressId]: error.message}},
-              {
-                status: 400,
-              },
-            );
-          }
-          return data(
-            {error: {[addressId]: error}},
-            {
-              status: 400,
-            },
-          );
-        }
-      }
-
-      case 'DELETE': {
-        // handles address deletion
-        try {
-          const {data, errors} = await customerAccount.mutate(
-            DELETE_ADDRESS_MUTATION,
-            {
-              variables: {
-                addressId: decodeURIComponent(addressId),
-                language: customerAccount.i18n.language,
-              },
-            },
-          );
-
-          if (errors?.length) {
-            throw new Error(errors[0].message);
-          }
-
-          if (data?.customerAddressDelete?.userErrors?.length) {
-            throw new Error(data?.customerAddressDelete?.userErrors[0].message);
-          }
-
-          if (!data?.customerAddressDelete?.deletedAddressId) {
-            throw new Error('Customer address delete failed.');
-          }
-
-          return {error: null, deletedAddress: addressId};
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            return data(
-              {error: {[addressId]: error.message}},
-              {
-                status: 400,
-              },
-            );
-          }
-          return data(
-            {error: {[addressId]: error}},
-            {
-              status: 400,
-            },
-          );
-        }
-      }
-
-      default: {
-        return data(
-          {error: {[addressId]: 'Method not allowed'}},
-          {
-            status: 405,
-          },
-        );
-      }
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      return data(
-        {error: error.message},
-        {
-          status: 400,
-        },
-      );
-    }
-    return data(
-      {error},
-      {
-        status: 400,
-      },
-    );
+    if (userErrors?.length) return failure(userErrors.map(error => error.message).join(' '));
+    return data({error: null, success: true}, {headers});
+  } catch {
+    console.error('Customer address mutation failed.');
+    return failure('We couldn’t save this change. Please try again.', 502);
   }
 }
 
 export default function Addresses() {
   const {customer} = useOutletContext<{customer: CustomerFragment}>();
-  const {defaultAddress, addresses} = customer;
-
-  return (
-    <div className="account-addresses">
-      <h2>Addresses</h2>
-      <br />
-      {!addresses.nodes.length ? (
-        <p>You have no addresses saved.</p>
-      ) : (
-        <div>
-          <div>
-            <legend>Create address</legend>
-            <NewAddressForm />
-          </div>
-          <br />
-          <hr />
-          <br />
-          <ExistingAddresses
-            addresses={addresses}
-            defaultAddress={defaultAddress}
-          />
-        </div>
-      )}
-    </div>
-  );
+  return <section className="account-addresses"><h2>Your address book</h2><p>Save the places you call home.</p>
+    {!customer.addresses.nodes.length && <p className="account-note">No addresses saved yet. Add your first address below.</p>}
+    <details className="address-create" open={!customer.addresses.nodes.length}><summary>Add a new address <span aria-hidden="true">+</span></summary><AddressForm /></details>
+    <div className="address-list">{customer.addresses.nodes.map(address => <details key={address.id} className="address-entry"><summary><span>{[address.firstName, address.lastName].filter(Boolean).join(' ')}{customer.defaultAddress?.id === address.id && <small>Default</small>}<span className="address-preview">{address.formatted.join(', ')}</span></span><span aria-hidden="true">+</span></summary><AddressForm address={address} isDefault={customer.defaultAddress?.id === address.id} /></details>)}</div>
+  </section>;
 }
 
-function NewAddressForm() {
-  const newAddress = {
-    address1: '',
-    address2: '',
-    city: '',
-    company: '',
-    territoryCode: '',
-    firstName: '',
-    id: 'new',
-    lastName: '',
-    phoneNumber: '',
-    zoneCode: '',
-    zip: '',
-  } as CustomerAddressInput;
-
-  return (
-    <AddressForm
-      addressId={'NEW_ADDRESS_ID'}
-      address={newAddress}
-      defaultAddress={null}
-    >
-      {({stateForMethod}) => (
-        <div>
-          <button
-            disabled={stateForMethod('POST') !== 'idle'}
-            formMethod="POST"
-            type="submit"
-          >
-            {stateForMethod('POST') !== 'idle' ? 'Creating' : 'Create'}
-          </button>
-        </div>
-      )}
-    </AddressForm>
-  );
+function AddressForm({address, isDefault}: {address?: AddressFragment; isDefault?: boolean}) {
+  const fetcher = useFetcher<typeof action>();
+  const id = useId();
+  const pending = fetcher.state !== 'idle';
+  return <fetcher.Form method="post" className="premium-form address-form">
+    <input type="hidden" name="addressId" value={address?.id || 'new'} />
+    <input type="hidden" name="_intent" value={address ? 'update' : 'create'} />
+    <fieldset disabled={pending}><legend className="sr-only">{address ? 'Edit address' : 'New address'}</legend><div className="address-fields">
+      {addressFields.map(field => <div key={field.key}><label htmlFor={`${id}-${field.key}`}>{field.label}</label><input id={`${id}-${field.key}`} name={field.key} type={field.key === 'phoneNumber' ? 'tel' : 'text'} autoComplete={field.autocomplete} defaultValue={address?.[field.key] || (field.key === 'territoryCode' ? 'IN' : '')} required={'required' in field && field.required} maxLength={field.key === 'territoryCode' ? 2 : 255} /></div>)}
+    </div><label className="checkbox-label"><input defaultChecked={isDefault} name="defaultAddress" type="checkbox" /> Set as default address</label>
+    <p role={fetcher.data?.error ? 'alert' : 'status'}>{fetcher.data?.error || (fetcher.data?.success ? 'Your address book has been updated.' : '')}</p>
+    <div className="form-actions"><button className="button" type="submit">{pending ? 'Saving…' : address ? 'Save address →' : 'Add address →'}</button>{address && <button className="text-button" name="intent" value="delete" type="submit" formNoValidate>Remove address</button>}</div></fieldset>
+  </fetcher.Form>;
 }
 
-function ExistingAddresses({
-  addresses,
-  defaultAddress,
-}: Pick<CustomerFragment, 'addresses' | 'defaultAddress'>) {
-  return (
-    <div>
-      <legend>Existing addresses</legend>
-      {addresses.nodes.map((address) => (
-        <AddressForm
-          key={address.id}
-          addressId={address.id}
-          address={address}
-          defaultAddress={defaultAddress}
-        >
-          {({stateForMethod}) => (
-            <div>
-              <button
-                disabled={stateForMethod('PUT') !== 'idle'}
-                formMethod="PUT"
-                type="submit"
-              >
-                {stateForMethod('PUT') !== 'idle' ? 'Saving' : 'Save'}
-              </button>
-              <button
-                disabled={stateForMethod('DELETE') !== 'idle'}
-                formMethod="DELETE"
-                type="submit"
-              >
-                {stateForMethod('DELETE') !== 'idle' ? 'Deleting' : 'Delete'}
-              </button>
-            </div>
-          )}
-        </AddressForm>
-      ))}
-    </div>
-  );
-}
-
-export function AddressForm({
-  addressId,
-  address,
-  defaultAddress,
-  children,
-}: {
-  addressId: AddressFragment['id'];
-  address: CustomerAddressInput;
-  defaultAddress: CustomerFragment['defaultAddress'];
-  children: (props: {
-    stateForMethod: (method: 'PUT' | 'POST' | 'DELETE') => Fetcher['state'];
-  }) => React.ReactNode;
-}) {
-  const {state, formMethod} = useNavigation();
-  const action = useActionData<ActionResponse>();
-  const error = action?.error?.[addressId];
-  const isDefaultAddress = defaultAddress?.id === addressId;
-  return (
-    <Form id={addressId}>
-      <fieldset>
-        <input type="hidden" name="addressId" defaultValue={addressId} />
-        <label htmlFor="firstName">First name*</label>
-        <input
-          aria-label="First name"
-          autoComplete="given-name"
-          defaultValue={address?.firstName ?? ''}
-          id="firstName"
-          name="firstName"
-          placeholder="First name"
-          required
-          type="text"
-        />
-        <label htmlFor="lastName">Last name*</label>
-        <input
-          aria-label="Last name"
-          autoComplete="family-name"
-          defaultValue={address?.lastName ?? ''}
-          id="lastName"
-          name="lastName"
-          placeholder="Last name"
-          required
-          type="text"
-        />
-        <label htmlFor="company">Company</label>
-        <input
-          aria-label="Company"
-          autoComplete="organization"
-          defaultValue={address?.company ?? ''}
-          id="company"
-          name="company"
-          placeholder="Company"
-          type="text"
-        />
-        <label htmlFor="address1">Address line*</label>
-        <input
-          aria-label="Address line 1"
-          autoComplete="address-line1"
-          defaultValue={address?.address1 ?? ''}
-          id="address1"
-          name="address1"
-          placeholder="Address line 1*"
-          required
-          type="text"
-        />
-        <label htmlFor="address2">Address line 2</label>
-        <input
-          aria-label="Address line 2"
-          autoComplete="address-line2"
-          defaultValue={address?.address2 ?? ''}
-          id="address2"
-          name="address2"
-          placeholder="Address line 2"
-          type="text"
-        />
-        <label htmlFor="city">City*</label>
-        <input
-          aria-label="City"
-          autoComplete="address-level2"
-          defaultValue={address?.city ?? ''}
-          id="city"
-          name="city"
-          placeholder="City"
-          required
-          type="text"
-        />
-        <label htmlFor="zoneCode">State / Province*</label>
-        <input
-          aria-label="State/Province"
-          autoComplete="address-level1"
-          defaultValue={address?.zoneCode ?? ''}
-          id="zoneCode"
-          name="zoneCode"
-          placeholder="State / Province"
-          required
-          type="text"
-        />
-        <label htmlFor="zip">Zip / Postal Code*</label>
-        <input
-          aria-label="Zip"
-          autoComplete="postal-code"
-          defaultValue={address?.zip ?? ''}
-          id="zip"
-          name="zip"
-          placeholder="Zip / Postal Code"
-          required
-          type="text"
-        />
-        <label htmlFor="territoryCode">Country Code*</label>
-        <input
-          aria-label="territoryCode"
-          autoComplete="country"
-          defaultValue={address?.territoryCode ?? ''}
-          id="territoryCode"
-          name="territoryCode"
-          placeholder="Country"
-          required
-          type="text"
-          maxLength={2}
-        />
-        <label htmlFor="phoneNumber">Phone</label>
-        <input
-          aria-label="Phone Number"
-          autoComplete="tel"
-          defaultValue={address?.phoneNumber ?? ''}
-          id="phoneNumber"
-          name="phoneNumber"
-          placeholder="+16135551111"
-          pattern="^\+?[1-9]\d{3,14}$"
-          type="tel"
-        />
-        <div>
-          <input
-            defaultChecked={isDefaultAddress}
-            id="defaultAddress"
-            name="defaultAddress"
-            type="checkbox"
-          />
-          <label htmlFor="defaultAddress">Set as default address</label>
-        </div>
-        {error ? (
-          <p>
-            <mark>
-              <small>{error}</small>
-            </mark>
-          </p>
-        ) : (
-          <br />
-        )}
-        {children({
-          stateForMethod: (method) => (formMethod === method ? state : 'idle'),
-        })}
-      </fieldset>
-    </Form>
-  );
-}

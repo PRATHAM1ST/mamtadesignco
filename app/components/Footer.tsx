@@ -1,129 +1,23 @@
 import {Suspense} from 'react';
-import {Await, NavLink} from 'react-router';
+import {Await, Link} from 'react-router';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
+import {siteConfig} from '~/lib/site-config';
+import {menuUrl} from '~/lib/menu';
+import {Newsletter} from '~/components/forms/Newsletter';
 
-interface FooterProps {
-  footer: Promise<FooterQuery | null>;
-  header: HeaderQuery;
-  publicStoreDomain: string;
-}
-
-export function Footer({
-  footer: footerPromise,
-  header,
-  publicStoreDomain,
-}: FooterProps) {
-  return (
-    <Suspense>
-      <Await resolve={footerPromise}>
-        {(footer) => (
-          <footer className="footer">
-            {footer?.menu && header.shop.primaryDomain?.url && (
-              <FooterMenu
-                menu={footer.menu}
-                primaryDomainUrl={header.shop.primaryDomain.url}
-                publicStoreDomain={publicStoreDomain}
-              />
-            )}
-          </footer>
-        )}
-      </Await>
-    </Suspense>
-  );
-}
-
-function FooterMenu({
-  menu,
-  primaryDomainUrl,
-  publicStoreDomain,
-}: {
-  menu: FooterQuery['menu'];
-  primaryDomainUrl: FooterProps['header']['shop']['primaryDomain']['url'];
-  publicStoreDomain: string;
+export function Footer({footer, header, publicStoreDomain, newsletterEnabled = false}: {
+  footer: Promise<FooterQuery | null>; header: HeaderQuery; publicStoreDomain: string; newsletterEnabled?: boolean;
 }) {
-  return (
-    <nav className="footer-menu" role="navigation">
-      {(menu || FALLBACK_FOOTER_MENU).items.map((item) => {
-        if (!item.url) return null;
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        const isExternal = !url.startsWith('/');
-        return isExternal ? (
-          <a href={url} key={item.id} rel="noopener noreferrer" target="_blank">
-            {item.title}
-          </a>
-        ) : (
-          <NavLink
-            end
-            key={item.id}
-            prefetch="intent"
-            style={activeLinkStyle}
-            to={url}
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
-    </nav>
-  );
-}
-
-const FALLBACK_FOOTER_MENU = {
-  id: 'gid://shopify/Menu/199655620664',
-  items: [
-    {
-      id: 'gid://shopify/MenuItem/461633060920',
-      resourceId: 'gid://shopify/ShopPolicy/23358046264',
-      tags: [],
-      title: 'Privacy Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/privacy-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633093688',
-      resourceId: 'gid://shopify/ShopPolicy/23358013496',
-      tags: [],
-      title: 'Refund Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/refund-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633126456',
-      resourceId: 'gid://shopify/ShopPolicy/23358111800',
-      tags: [],
-      title: 'Shipping Policy',
-      type: 'SHOP_POLICY',
-      url: '/policies/shipping-policy',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461633159224',
-      resourceId: 'gid://shopify/ShopPolicy/23358079032',
-      tags: [],
-      title: 'Terms of Service',
-      type: 'SHOP_POLICY',
-      url: '/policies/terms-of-service',
-      items: [],
-    },
-  ],
-};
-
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'white',
-  };
+  return <footer className="footer">
+    <div className="footer-top"><div><p className="eyebrow">MAMTA DESIGN CO.</p><h2>For the nights<br/>you remember.</h2><Link className="text-link" to="/shop">Find your Chaniya <span>↗</span></Link></div>
+      <div className="footer-navigation"><nav aria-label="Explore the store"><p className="eyebrow">EXPLORE</p><Link to="/shop">Shop all</Link><Link to="/catalogue">The catalogue</Link><Link to="/collections">Collections</Link><Link to="/blogs">Journal</Link><Link to="/favorites">Your favorites</Link></nav>
+        <nav aria-label="Customer care"><p className="eyebrow">HERE FOR YOU</p><Link to="/account">Your account</Link><Link to="/contact">Contact</Link><Link to="/policies">Store policies</Link>
+          <Suspense><Await resolve={footer}>{(response) => response?.menu?.items.map((item) => item.url && <Link key={item.id} to={menuUrl(item.url, [publicStoreDomain, header.shop.primaryDomain.url])}>{item.title}</Link>)}</Await></Suspense>
+          {siteConfig.supportEmail && <a href={`mailto:${siteConfig.supportEmail}`}>{siteConfig.supportEmail}</a>}
+        </nav></div>
+      {newsletterEnabled && <Newsletter enabled={newsletterEnabled}/>}
+    </div>
+    <div className="footer-wordmark" aria-hidden="true">mamta.</div>
+    <div className="footer-bottom"><span>© {new Date().getUTCFullYear()} {siteConfig.brandName}</span><span>India · English</span><span>Secure checkout by Shopify</span></div>
+  </footer>;
 }

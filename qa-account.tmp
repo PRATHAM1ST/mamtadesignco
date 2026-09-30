@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="en-IN"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="stylesheet" href="/app/styles/reset.css"/><link rel="stylesheet" href="/app/styles/app.css"/><link rel="stylesheet" href="/app/styles/commerce.css"/><link rel="stylesheet" href="/app/styles/catalog.css"/><link rel="stylesheet" href="/app/styles/content.css"/><title>Your account | Mamta Design Co</title><meta property="og:title" content="Your account | Mamta Design Co"/><meta property="og:type" content="website"/><meta property="og:site_name" content="Mamta Design Co"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Your account | Mamta Design Co"/><meta name="robots" content="noindex, nofollow"/><link rel="preconnect" href="https://cdn.shopify.com"/><link rel="preconnect" href="https://shop.app"/><link rel="icon" type="image/svg+xml" href="/app/assets/favicon.svg"/><link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin="anonymous"/></head><body><a class="skip-link" href="#main-content">Skip to content</a><div id="header-marker" aria-hidden="true"></div><header class="header  "><div class="header-left"><button class="icon-button" aria-label="Open navigation"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18M3 16h18"></path></svg></button><nav class="header-menu-desktop" aria-label="Main navigation"><div class="menu-group"><a class="header-menu-item" href="/" data-discover="true">Home</a></div><div class="menu-group"><a class="header-menu-item" href="/collections/all" data-discover="true">Catalog</a></div><div class="menu-group"><a class="header-menu-item" href="/pages/contact" data-discover="true">Contact</a></div></nav></div><a class="wordmark" aria-label="Mamta Design Co home" href="/" data-discover="true"><span>MAMTA</span><small>DESIGN CO.</small></a><nav class="header-ctas" aria-label="Your account and shopping bag"><a href="/search" class="icon-button" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4 4"></path></svg></a><a class="icon-button account-link" aria-label="Your account" href="/account" data-discover="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"></circle><path d="M5 21v-2a7 7 0 0 1 14 0v2"></path></svg><!--$--><!--/$--></a><a class="icon-button favorites-link" aria-label="Favorites" href="/favorites" data-discover="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 4.7a5 5 0 0 0-7.1 0L12 6.1l-1.4-1.4a5 5 0 0 0-7.1 7.1L12 20l8.5-8.2a5 5 0 0 0 0-7.1Z"></path></svg></a><!--$--><a href="/cart" class="cart-toggle icon-button" aria-label="Shopping bag"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14l1 14H4L5 7Z"></path><path d="M8 8V6a4 4 0 0 1 8 0v2"></path></svg><span class="cart-count" aria-hidden="true">0</span></a><!--/$--></nav></header><main id="main-content" tabindex="-1"><div class="content-shell content-empty"><p class="eyebrow">Your account</p><h1>Let’s try again.</h1><p role="alert">We couldn’t load your account. Please try again.</p><a class="button" href="/account/login" data-discover="true">Sign in</a><a href="/shop" data-discover="true">Continue browsing →</a></div></main><footer class="footer"><div class="footer-top"><div><p class="eyebrow">MAMTA DESIGN CO.</p><h2>For the nights<br/>you remember.</h2><a class="text-link" href="/shop" data-discover="true">Find your Chaniya <span>↗</span></a></div><div class="footer-navigation"><nav aria-label="Explore the store"><p class="eyebrow">EXPLORE</p><a href="/shop" data-discover="true">Shop all</a><a href="/catalogue" data-discover="true">The catalogue</a><a href="/collections" data-discover="true">Collections</a><a href="/blogs" data-discover="true">Journal</a><a href="/favorites" data-discover="true">Your favorites</a></nav><nav aria-label="Customer care"><p class="eyebrow">HERE FOR YOU</p><a href="/account" data-discover="true">Your account</a><a href="/contact" data-discover="true">Contact</a><a href="/policies" data-discover="true">Store policies</a><!--$--><a href="/search" data-discover="true">Search</a><!--/$--></nav></div></div><div class="footer-wordmark" aria-hidden="true">mamta.</div><div class="footer-bottom"><span>© <!-- -->2026<!-- --> <!-- -->Mamta Design Co</span><span>India · English</span><span>Secure checkout by Shopify</span></div></footer><dialog class="modal drawer-dialog " aria-labelledby=":R1qb5:"></dialog><dialog class="modal drawer-dialog search-dialog" aria-labelledby=":R22b5:"></dialog><dialog class="modal drawer-dialog " aria-labelledby=":R2ab5:"></dialog><!--$--><!--/$--><script type="application/ld+json" nonce="67d1ee8519df8dbc50db4c60a05cefd6">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Mamtadesignco.","url":"http://localhost:3000"},{"@type":"WebSite","name":"Mamtadesignco.","url":"http://localhost:3000","potentialAction":{"@type":"SearchAction","target":"http://localhost:3000/search?q={search_term_string}","query-input":"required name=search_term_string"}}]}</script><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">((storageKey2, restoreKey) => {
+    if (!window.history.state || !window.history.state.key) {
+      let key = Math.random().toString(32).slice(2);
+      window.history.replaceState({ key }, "");
+    };
+    try {
+      let positions = JSON.parse(sessionStorage.getItem(storageKey2) || "{}");
+      let storedY = positions[restoreKey || window.history.state.key];
+      if (typeof storedY === "number") {
+        window.scrollTo(0, storedY);
+      }
+    } catch (error) {
+      console.error(error);
+      sessionStorage.removeItem(storageKey2);
+    }
+  })("react-router-scroll-positions", null)</script><link rel="modulepreload" href="/app/entry.client.tsx" nonce="67d1ee8519df8dbc50db4c60a05cefd6"/><link rel="modulepreload" href="/app/root.tsx" nonce="67d1ee8519df8dbc50db4c60a05cefd6"/><link rel="modulepreload" href="/app/routes/account.tsx" nonce="67d1ee8519df8dbc50db4c60a05cefd6"/><link rel="modulepreload" href="/app/routes/account._index.tsx" nonce="67d1ee8519df8dbc50db4c60a05cefd6"/><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext = {"basename":"/","future":{"unstable_optimizeDeps":true,"v8_passThroughRequests":false,"v8_trailingSlashAwareDataRequests":false,"unstable_previewServerPrerendering":false,"v8_middleware":true,"v8_splitRouteModules":true,"v8_viteEnvironmentApi":false},"routeDiscovery":{"mode":"lazy","manifestPath":"/__manifest"},"ssr":true,"isSpaMode":false};window.__reactRouterContext.stream = new ReadableStream({start(controller){window.__reactRouterContext.streamController = controller;}}).pipeThrough(new TextEncoderStream());</script><script nonce="67d1ee8519df8dbc50db4c60a05cefd6" type="module" async="">import "/@id/__x00__virtual:react-router/inject-hmr-runtime";;
+import * as route0 from "/app/root.tsx";
+import * as route1 from "/app/routes/account.tsx";
+import * as route2 from "/app/routes/account._index.tsx";
+  window.__reactRouterManifest = {
+  "version": "0.005303551380743787",
+  "url": "/@id/__x00__virtual:react-router/browser-manifest",
+  "hmr": {
+    "runtime": "/@id/__x00__virtual:react-router/inject-hmr-runtime"
+  },
+  "entry": {
+    "module": "/app/entry.client.tsx",
+    "imports": []
+  },
+  "routes": {
+    "root": {
+      "id": "root",
+      "path": "",
+      "module": "/app/root.tsx",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": true,
+      "imports": []
+    },
+    "routes/account": {
+      "id": "routes/account",
+      "parentId": "root",
+      "path": "account",
+      "module": "/app/routes/account.tsx",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": true,
+      "imports": []
+    },
+    "routes/account._index": {
+      "id": "routes/account._index",
+      "parentId": "routes/account",
+      "index": true,
+      "module": "/app/routes/account._index.tsx",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": false,
+      "imports": []
+    },
+    "routes/_index": {
+      "id": "routes/_index",
+      "parentId": "root",
+      "index": true,
+      "module": "/app/routes/_index.tsx",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": false,
+      "imports": []
+    }
+  }
+};
+  window.__reactRouterRouteModules = {"root":route0,"routes/account":route1,"routes/account._index":route2};
+
+import("/app/entry.client.tsx");</script></body></html><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.enqueue("[{\"_1\":2,\"_3\":-5,\"_4\":5},\"loaderData\",{\"_18\":19},\"actionData\",\"errors\",{\"_6\":7},\"routes/account\",{\"_8\":9,\"_10\":11,\"_12\":13,\"_14\":15,\"_16\":17},\"status\",400,\"statusText\",\"Bad Request\",\"internal\",false,\"data\",\"Customer Account API OAuth requires a Hydrogen tunnel in local development.\\n\\nRun the development server with the `--customer-account-push` flag,\\n\\nthen open the tunnel URL shown in your terminal (`https://*.tryhydrogen.dev`) instead of localhost.\",\"__type\",\"RouteErrorResponse\",\"root\",{\"_20\":21,\"_22\":23,\"_24\":25,\"_26\":27,\"_28\":29,\"_30\":31,\"_32\":13,\"_33\":34,\"_35\":36},\"cart\",[\"P\",21],\"isLoggedIn\",[\"P\",23],\"footer\",[\"P\",25],\"header\",{\"_33\":46,\"_47\":48},\"publicStoreDomain\",\"gq1f9a-7u.myshopify.com\",\"origin\",\"http://localhost:3000\",\"newsletterEnabled\",\"shop\",[\"P\",34],\"consent\",{\"_37\":29,\"_38\":39,\"_40\":41,\"_42\":43,\"_44\":45},\"checkoutDomain\",\"storefrontAccessToken\",\"add8f048b0856d74c8adfdf790b9e3cc\",\"withPrivacyBanner\",true,\"country\",\"IN\",\"language\",\"EN\",{\"_49\":80,\"_81\":82,\"_83\":-5,\"_84\":85,\"_86\":87},\"menu\",{\"_49\":50,\"_51\":52},\"id\",\"gid://shopify/Menu/200352956462\",\"items\",[53,54,55],{\"_49\":74,\"_57\":-5,\"_59\":75,\"_61\":76,\"_63\":77,\"_65\":78,\"_51\":79},{\"_49\":68,\"_57\":-5,\"_59\":69,\"_61\":70,\"_63\":71,\"_65\":72,\"_51\":73},{\"_49\":56,\"_57\":58,\"_59\":60,\"_61\":62,\"_63\":64,\"_65\":66,\"_51\":67},\"gid://shopify/MenuItem/474016546862\",\"resourceId\",\"gid://shopify/Page/94344773678\",\"tags\",[],\"title\",\"Contact\",\"type\",\"PAGE\",\"url\",\"https://mamtadesignco.com/pages/contact\",[],\"gid://shopify/MenuItem/474016514094\",[],\"Catalog\",\"CATALOG\",\"https://mamtadesignco.com/collections/all\",[],\"gid://shopify/MenuItem/474016481326\",[],\"Home\",\"FRONTPAGE\",\"https://mamtadesignco.com/\",[],\"gid://shopify/Shop/60631351342\",\"name\",\"Mamtadesignco.\",\"description\",\"primaryDomain\",{\"_65\":89},\"brand\",{\"_88\":-5},\"logo\",\"https://mamtadesignco.com\"]\n");</script><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.enqueue("P21:-5\n");</script><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.enqueue("P23:[[\"Z\",13]]\n");</script><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.enqueue("P25:[{\"_47\":92},{\"_49\":93,\"_51\":94},\"gid://shopify/Menu/200352989230\",[95],{\"_49\":96,\"_57\":-5,\"_59\":97,\"_61\":98,\"_63\":99,\"_65\":100,\"_51\":101},\"gid://shopify/MenuItem/474016579630\",[],\"Search\",\"SEARCH\",\"https://mamtadesignco.com/search\",[]]\n");</script><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.enqueue("P34:[{\"_103\":80,\"_104\":45,\"_105\":106,\"_107\":108},\"shopId\",\"acceptedLanguage\",\"currency\",\"INR\",\"hydrogenSubchannelId\",\"1000181321\"]\n");</script><!--$--><script nonce="67d1ee8519df8dbc50db4c60a05cefd6">window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$--><!--/$--><!--/$--><!--/$--><!--/$-->

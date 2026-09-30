@@ -1,239 +1,120 @@
-import {
-  redirect,
-  useLoaderData,
-} from 'react-router';
+import {Suspense, useEffect, useRef, useState} from 'react';
+import {Await, Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
-import {
-  getSelectedProductOptions,
-  Analytics,
-  useOptimisticVariant,
-  getProductOptions,
-  getAdjacentAndFirstAvailableVariants,
-  useSelectedOptionInUrlParam,
-} from '@shopify/hydrogen';
+import {getSelectedProductOptions, Analytics, useOptimisticVariant, getProductOptions, getAdjacentAndFirstAvailableVariants, useNonce} from '@shopify/hydrogen';
 import {ProductPrice} from '~/components/ProductPrice';
-import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {ProductGallery} from '~/components/product/ProductGallery';
+import {SizeGuide, parseSizeGuide} from '~/components/product/SizeGuide';
+import {RecentlyViewed} from '~/components/product/RecentlyViewed';
+import {ProductItem} from '~/components/ProductItem';
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {useAside} from '~/components/Aside';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {PRODUCT_QUERY, variantGid} from '~/lib/product';
+import {PRODUCT_CARD_FRAGMENT} from '~/lib/product-fragments';
+import {sanitizeHtml} from '~/lib/html';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: `Hydrogen | ${data?.product.title ?? ''}`},
-    {
-      rel: 'canonical',
-      href: `/products/${data?.product.handle}`,
-    },
-  ];
+  if (!data) return [{title: 'Piece not found | Mamta Design Co.'}, {name: 'robots', content: 'noindex'}];
+  const title = `${data.product.seo.title || data.product.title} | Mamta Design Co.`;
+  const description = data.product.seo.description || data.product.description.slice(0, 160);
+  const image = data.product.selectedOrFirstAvailableVariant?.image?.url;
+  return [{title}, {name: 'description', content: description}, {rel: 'canonical', href: data.canonical}, {property: 'og:type', content: 'product'}, {property: 'og:title', content: title}, {property: 'og:description', content: description}, {property: 'og:url', content: data.canonical}, ...(image ? [{property: 'og:image', content: image}, {name: 'twitter:card', content: 'summary_large_image'}] : [])];
 };
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({
-  context,
-  params,
-  request,
-}: Route.LoaderArgs) {
-  const {handle} = params;
-  const {storefront} = context;
-
-  if (!handle) {
-    throw new Error('Expected product handle to be defined');
+export async function loader({context, params, request}: Route.LoaderArgs) {
+  const handle = params.handle;
+  if (!handle) throw new Response('Piece not found', {status: 404});
+  const url = new URL(request.url);
+  const requestedVariant = variantGid(url.searchParams.get('variant'));
+  const options = getSelectedProductOptions(request).filter((option) => option.name !== 'variant' && !option.name.startsWith('utm_') && !['gclid', 'fbclid'].includes(option.name));
+  const result = await context.storefront.query(PRODUCT_QUERY, {
+    variables: {handle, selectedOptions: options, variantId: requestedVariant ?? 'gid://shopify/ProductVariant/0', hasVariant: !!requestedVariant},
+    cache: context.storefront.CacheShort(),
+  });
+  if (result.errors?.length) {
+    console.error('Shopify product retrieval failed', result.errors.map((error) => error.message));
+    throw new Response('This piece could not be loaded. Please try again.', {status: 502});
   }
-
-  const [{product}] = await Promise.all([
-    storefront.query(PRODUCT_QUERY, {
-      variables: {handle, selectedOptions: getSelectedProductOptions(request)},
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  if (!product?.id) {
-    throw new Response(null, {status: 404});
-  }
-
-  // The API handle might be localized, so redirect to the localized handle
-  redirectIfHandleIsLocalized(request, {handle, data: product});
-
-  return {
-    product,
+  if (!result.product?.id) throw new Response('Piece not found', {status: 404});
+  const product = result.product;
+  product.descriptionHtml = sanitizeHtml(product.descriptionHtml);
+  const policies = {
+    shippingPolicy: result.shop.shippingPolicy ? {...result.shop.shippingPolicy, body: sanitizeHtml(result.shop.shippingPolicy.body)} : null,
+    refundPolicy: result.shop.refundPolicy ? {...result.shop.refundPolicy, body: sanitizeHtml(result.shop.refundPolicy.body)} : null,
   };
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Put any API calls that is not critical to be available on first page render
-  // For example: product reviews, product recommendations, social feeds.
-
-  return {};
+  redirectIfHandleIsLocalized(request, {handle, data: product});
+  let variantError: string | null = null;
+  if (url.searchParams.has('variant')) {
+    if (requestedVariant && result.selectedVariant && 'product' in result.selectedVariant && result.selectedVariant.product.id === product.id) product.selectedOrFirstAvailableVariant = result.selectedVariant;
+    else {product.selectedOrFirstAvailableVariant = null; variantError = 'That selection is no longer available. Choose an option below.';}
+  }
+  const recommendations = context.storefront.query(RECOMMENDATIONS_QUERY, {variables: {productId: product.id}, cache: context.storefront.CacheShort()})
+    .then(({productRecommendations, errors}) => ({products: errors?.length ? [] : productRecommendations || [], error: !!errors?.length}))
+    .catch((error: unknown) => {console.error('Shopify product recommendations failed', error instanceof Error ? error.message : 'Unknown error'); return {products: [], error: true};});
+  return {product, policies, recommendations, canonical: `${url.origin}/products/${product.handle}`, variantError};
 }
 
 export default function Product() {
-  const {product} = useLoaderData<typeof loader>();
-
-  // Optimistically selects a variant with given available variant information
-  const selectedVariant = useOptimisticVariant(
-    product.selectedOrFirstAvailableVariant,
-    getAdjacentAndFirstAvailableVariants(product),
-  );
-
-  // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url
-  useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
-
-  // Get the product options array
-  const productOptions = getProductOptions({
-    ...product,
-    selectedOrFirstAvailableVariant: selectedVariant,
-  });
-
-  const {title, descriptionHtml} = product;
-
+  const {product, policies, recommendations, canonical, variantError} = useLoaderData<typeof loader>();
+  const variant = useOptimisticVariant(product.selectedOrFirstAvailableVariant, getAdjacentAndFirstAvailableVariants(product));
+  const optionBase = variant || getAdjacentAndFirstAvailableVariants(product)[0];
+  const productOptions = getProductOptions({...product, selectedOrFirstAvailableVariant: optionBase}).map((option) => variant ? option : {...option, optionValues: option.optionValues.map((value) => ({...value, selected: false}))});
+  const guide = parseSizeGuide(product.sizeGuide?.value);
+  const nonce = useNonce();
+  const purchase = useRef<HTMLDivElement>(null);
+  const [showSticky, setShowSticky] = useState(false);
+  const {open} = useAside();
+  useEffect(() => {
+    if (!purchase.current) return;
+    const observer = new IntersectionObserver(([entry]) => setShowSticky(!entry.isIntersecting && entry.boundingClientRect.bottom < 0));
+    observer.observe(purchase.current);
+    return () => observer.disconnect();
+  }, []);
+  const jsonLd = {
+    '@context': 'https://schema.org', '@type': 'Product', name: product.title,
+    description: product.description, url: canonical,
+    image: product.media.nodes.filter((media) => media.__typename === 'MediaImage').map((media) => media.previewImage?.url).filter(Boolean),
+    ...(variant ? {sku: variant.sku || undefined, offers: {'@type': 'Offer', price: variant.price.amount, priceCurrency: variant.price.currencyCode, availability: variant.availableForSale ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock', url: canonical}} : {}),
+  };
   return (
-    <div className="product">
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
-        />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
+    <>
+      <div className="pdp-page">
+        <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/shop">Shop</Link><span aria-hidden="true">/</span><span>{product.title}</span></nav>
+        <div className="pdp-layout">
+          <ProductGallery media={product.media.nodes} selectedImage={variant?.image} title={product.title} />
+          <div className="pdp-details">
+            <p className="eyebrow">{product.vendor || 'Mamta Design Co.'}</p>
+            <h1>{product.title}</h1>
+            <ProductPrice price={variant?.price} compareAtPrice={variant?.compareAtPrice} />
+            <p className="pdp-purchase-note">Shipping and applicable taxes calculated at checkout.</p>
+            {(variantError || !variant) && <div className="commerce-feedback commerce-feedback-error" role="alert"><p>{variantError || 'This combination is unavailable. Choose another selection.'}</p><Link to={`/products/${product.handle}`} className="text-link">View available selections</Link></div>}
+            {guide && <SizeGuide guide={guide} />}
+            <div ref={purchase}><ProductForm productOptions={productOptions} selectedVariant={variant} /></div>
+            <div className="pdp-assurance"><span aria-hidden="true">↗</span><p>Continue securely with Shopify Checkout.</p></div>
+            <div className="product-accordions">
+              {!!product.descriptionHtml && <details open><summary>The piece <span aria-hidden="true">+</span></summary><div className="rich-text" dangerouslySetInnerHTML={{__html: product.descriptionHtml}} /></details>}
+              {!!product.details?.value && <details><summary>Details <span aria-hidden="true">+</span></summary><p className="metafield-copy">{product.details.value}</p></details>}
+              {!!product.care?.value && <details><summary>Care for your garment <span aria-hidden="true">+</span></summary><p className="metafield-copy">{product.care.value}</p></details>}
+              {!!policies.shippingPolicy && <details><summary>Delivery <span aria-hidden="true">+</span></summary><div className="rich-text" dangerouslySetInnerHTML={{__html: policies.shippingPolicy.body}} /><Link to={`/policies/${policies.shippingPolicy.handle}`} className="text-link">Read the shipping policy ↗</Link></details>}
+              {!!policies.refundPolicy && <details><summary>Returns & exchanges <span aria-hidden="true">+</span></summary><div className="rich-text" dangerouslySetInnerHTML={{__html: policies.refundPolicy.body}} /><Link to={`/policies/${policies.refundPolicy.handle}`} className="text-link">Read the returns policy ↗</Link></details>}
+            </div>
+          </div>
+        </div>
+        <Suspense fallback={null}><Await resolve={recommendations}>{(result) => result.error ? <p className="recommendations-status" role="status">Related pieces could not be loaded. <Link to="/shop">Explore the shop</Link>.</p> : result.products.length > 0 && <section className="product-recommendations" aria-labelledby="recommendations-heading"><div className="section-heading"><p className="eyebrow">Considered together</p><h2 id="recommendations-heading">Continue your edit.</h2></div><div className="products-grid">{result.products.slice(0, 4).map((item) => <ProductItem product={item} key={item.id} />)}</div></section>}</Await></Suspense>
+        <RecentlyViewed productId={product.id} />
       </div>
-      <Analytics.ProductView
-        data={{
-          products: [
-            {
-              id: product.id,
-              title: product.title,
-              price: selectedVariant?.price.amount || '0',
-              vendor: product.vendor,
-              variantId: selectedVariant?.id || '',
-              variantTitle: selectedVariant?.title || '',
-              quantity: 1,
-            },
-          ],
-        }}
-      />
-    </div>
+      {showSticky && <div className="mobile-purchase-bar"><div><span>{variant?.title === 'Default Title' ? product.title : variant?.title || 'Choose a selection'}</span><ProductPrice price={variant?.price} /></div><AddToCartButton disabled={!variant?.availableForSale} onSuccess={() => open('cart')} lines={variant ? [{merchandiseId: variant.id, quantity: 1, selectedVariant: variant}] : []}>{variant?.availableForSale ? 'Add to bag' : 'Sold out'}</AddToCartButton></div>}
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd).replace(/</g, '\u003c')}} />
+      <Analytics.ProductView data={{products: [{id: product.id, title: product.title, price: variant?.price.amount || '0', vendor: product.vendor, variantId: variant?.id || '', variantTitle: variant?.title || '', quantity: 1}]}} />
+    </>
   );
 }
 
-const PRODUCT_VARIANT_FRAGMENT = `#graphql
-  fragment ProductVariant on ProductVariant {
-    availableForSale
-    compareAtPrice {
-      amount
-      currencyCode
-    }
-    id
-    image {
-      __typename
-      id
-      url
-      altText
-      width
-      height
-    }
-    price {
-      amount
-      currencyCode
-    }
-    product {
-      title
-      handle
-    }
-    selectedOptions {
-      name
-      value
-    }
-    sku
-    title
-    unitPrice {
-      amount
-      currencyCode
-    }
+const RECOMMENDATIONS_QUERY = `#graphql
+  query ProductRecommendations($productId: ID!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {
+    productRecommendations(productId: $productId) { ...ProductCard }
   }
-` as const;
-
-const PRODUCT_FRAGMENT = `#graphql
-  fragment Product on Product {
-    id
-    title
-    vendor
-    handle
-    descriptionHtml
-    description
-    encodedVariantExistence
-    encodedVariantAvailability
-    options {
-      name
-      optionValues {
-        name
-        firstSelectableVariant {
-          ...ProductVariant
-        }
-        swatch {
-          color
-          image {
-            previewImage {
-              url
-            }
-          }
-        }
-      }
-    }
-    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
-      ...ProductVariant
-    }
-    adjacentVariants (selectedOptions: $selectedOptions) {
-      ...ProductVariant
-    }
-    seo {
-      description
-      title
-    }
-  }
-  ${PRODUCT_VARIANT_FRAGMENT}
-` as const;
-
-const PRODUCT_QUERY = `#graphql
-  query Product(
-    $country: CountryCode
-    $handle: String!
-    $language: LanguageCode
-    $selectedOptions: [SelectedOptionInput!]!
-  ) @inContext(country: $country, language: $language) {
-    product(handle: $handle) {
-      ...Product
-    }
-  }
-  ${PRODUCT_FRAGMENT}
+  ${PRODUCT_CARD_FRAGMENT}
 ` as const;

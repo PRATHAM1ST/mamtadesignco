@@ -1,133 +1,30 @@
-import {useLoaderData, Link} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/collections._index';
-import {getPaginationVariables, Image} from '@shopify/hydrogen';
-import type {CollectionFragment} from 'storefrontapi.generated';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {getPaginationVariables, Image, Pagination} from '@shopify/hydrogen';
+import {assertStorefrontSuccess} from '~/lib/storefront-errors';
+import {routeSeo} from '~/lib/seo';
 
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+export const meta: Route.MetaFunction = ({data}) => routeSeo({title: 'Collections', description: 'Discover the collections from Mamta Design Co.', url: data ? `${data.origin}/collections` : undefined, image: data?.collections.nodes[0]?.image?.url});
 
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+export async function loader({context, request}: Route.LoaderArgs) {
+  const {collections, errors} = await context.storefront.query(COLLECTIONS_QUERY, {variables: getPaginationVariables(request, {pageBy: 12}), cache: context.storefront.CacheShort()});
+  assertStorefrontSuccess(errors, 'MerchandisingCollections');
+  return {collections, origin: new URL(request.url).origin};
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({context, request}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
-  });
-
-  const [{collections}] = await Promise.all([
-    context.storefront.query(COLLECTIONS_QUERY, {
-      variables: paginationVariables,
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  return {collections};
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
-}
-
-export default function Collections() {
+export default function CollectionsIndex() {
   const {collections} = useLoaderData<typeof loader>();
-
-  return (
-    <div className="collections">
-      <h1>Collections</h1>
-      <PaginatedResourceSection<CollectionFragment>
-        connection={collections}
-        resourcesClassName="collections-grid"
-      >
-        {({node: collection, index}) => (
-          <CollectionItem
-            key={collection.id}
-            collection={collection}
-            index={index}
-          />
-        )}
-      </PaginatedResourceSection>
-    </div>
-  );
-}
-
-function CollectionItem({
-  collection,
-  index,
-}: {
-  collection: CollectionFragment;
-  index: number;
-}) {
-  return (
-    <Link
-      className="collection-item"
-      key={collection.id}
-      to={`/collections/${collection.handle}`}
-      prefetch="intent"
-    >
-      {collection?.image && (
-        <Image
-          alt={collection.image.altText || collection.title}
-          aspectRatio="1/1"
-          data={collection.image}
-          loading={index < 3 ? 'eager' : undefined}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h5>{collection.title}</h5>
-    </Link>
-  );
+  return <div className="collections-page page-width"><header className="catalog-heading"><span className="eyebrow">The wardrobe</span><h1>A world of<br /><em>possibilities.</em></h1></header>
+    {collections.nodes.length ? <Pagination connection={collections}>{({nodes, PreviousLink, NextLink, isLoading}) => <><PreviousLink className="text-link">Previous collections</PreviousLink><div className="collection-editorial-grid">{nodes.map((collection, index) => <Link className="collection-editorial-tile" key={collection.id} to={`/collections/${collection.handle}`} prefetch="intent">{collection.image ? <Image data={collection.image} alt={collection.image.altText || collection.title} aspectRatio={index % 3 === 0 ? '4/5' : '3/4'} sizes="(min-width: 768px) 45vw, 90vw" loading={index < 2 ? 'eager' : 'lazy'} /> : <div className="collection-image-placeholder" aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>}<div><h2>{collection.title}</h2><span aria-hidden="true">↗</span></div>{collection.description && <p>{collection.description}</p>}</Link>)}</div><div className="catalog-pagination"><NextLink className="button button-outline">{isLoading ? 'Loading…' : 'More collections'}</NextLink></div></>}</Pagination> : <div className="collection-catalogue-invite"><span className="eyebrow">Every piece, in one place</span><h2>The collection awaits.</h2><p>Explore the complete wardrobe and choose what moves you.</p><Link className="button button-primary" to="/shop">Shop all pieces <span aria-hidden="true">↗</span></Link></div>}
+  </div>;
 }
 
 const COLLECTIONS_QUERY = `#graphql
-  fragment Collection on Collection {
-    id
-    title
-    handle
-    image {
-      id
-      url
-      altText
-      width
-      height
-    }
-  }
-  query StoreCollections(
-    $country: CountryCode
-    $endCursor: String
-    $first: Int
-    $language: LanguageCode
-    $last: Int
-    $startCursor: String
-  ) @inContext(country: $country, language: $language) {
-    collections(
-      first: $first,
-      last: $last,
-      before: $startCursor,
-      after: $endCursor
-    ) {
-      nodes {
-        ...Collection
-      }
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
+  query MerchandisingCollections($country: CountryCode, $language: LanguageCode, $first: Int, $last: Int, $startCursor: String, $endCursor: String) @inContext(country: $country, language: $language) {
+    collections(first: $first, last: $last, before: $startCursor, after: $endCursor) {
+      nodes { id handle title description image { url altText width height } }
+      pageInfo { hasPreviousPage hasNextPage startCursor endCursor }
     }
   }
 ` as const;
+

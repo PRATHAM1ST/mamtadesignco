@@ -1,133 +1,40 @@
-import type {CustomerFragment} from 'customer-accountapi.generated';
-import type {CustomerUpdateInput} from '@shopify/hydrogen/customer-account-api-types';
+﻿import type {CustomerFragment} from 'customer-accountapi.generated';
 import {CUSTOMER_UPDATE_MUTATION} from '~/graphql/customer-account/CustomerUpdateMutation';
-import {
-  data,
-  Form,
-  useActionData,
-  useNavigation,
-  useOutletContext,
-} from 'react-router';
+import {data, Form, useActionData, useNavigation, useOutletContext} from 'react-router';
 import type {Route} from './+types/account.profile';
+import {routeSeo} from '~/lib/seo';
+import {sameOriginRequest} from '~/lib/integrations.server';
+import {privateAccountRequest} from '~/lib/account-private.server';
 
-export type ActionResponse = {
-  error: string | null;
-  customer: CustomerFragment | null;
-};
-
-export const meta: Route.MetaFunction = () => {
-  return [{title: 'Profile'}];
-};
-
-export async function loader({context}: Route.LoaderArgs) {
-  context.customerAccount.handleAuthStatus();
-
-  return {};
-}
+export const meta: Route.MetaFunction = () => routeSeo({title: 'Your profile', noindex: true});
+export function headers() { return {'Cache-Control': 'private, no-store'}; }
+export async function loader({context}: Route.LoaderArgs) { await privateAccountRequest(context.customerAccount.handleAuthStatus()); return data({}, {headers: {'Cache-Control': 'private, no-store'}}); }
 
 export async function action({request, context}: Route.ActionArgs) {
-  const {customerAccount} = context;
-
-  if (request.method !== 'PUT') {
-    return data({error: 'Method not allowed'}, {status: 405});
-  }
-
+  const headers = {'Cache-Control': 'private, no-store'};
+  if (!['POST', 'PUT'].includes(request.method)) return data({error: 'Method not allowed.', success: false}, {status: 405, headers});
+  if (!sameOriginRequest(request)) return data({error: 'This request could not be accepted.', success: false}, {status: 403, headers});
+  if (!await context.customerAccount.isLoggedIn()) return data({error: 'Your session has ended. Please sign in again.', success: false}, {status: 401, headers});
   const form = await request.formData();
-
+  const firstName = String(form.get('firstName') || '').trim();
+  const lastName = String(form.get('lastName') || '').trim();
+  if (firstName.length > 100 || lastName.length > 100) return data({error: 'Please use names shorter than 100 characters.', success: false}, {status: 400, headers});
   try {
-    const customer: CustomerUpdateInput = {};
-    const validInputKeys = ['firstName', 'lastName'] as const;
-    for (const [key, value] of form.entries()) {
-      if (!validInputKeys.includes(key as any)) {
-        continue;
-      }
-      if (typeof value === 'string' && value.length) {
-        customer[key as (typeof validInputKeys)[number]] = value;
-      }
-    }
-
-    // update customer and possibly password
-    const {data, errors} = await customerAccount.mutate(
-      CUSTOMER_UPDATE_MUTATION,
-      {
-        variables: {
-          customer,
-          language: customerAccount.i18n.language,
-        },
-      },
-    );
-
-    if (errors?.length) {
-      throw new Error(errors[0].message);
-    }
-
-    if (!data?.customerUpdate?.customer) {
-      throw new Error('Customer profile update failed.');
-    }
-
-    return {
-      error: null,
-      customer: data?.customerUpdate?.customer,
-    };
-  } catch (error: any) {
-    return data(
-      {error: error.message, customer: null},
-      {
-        status: 400,
-      },
-    );
+    const result = await context.customerAccount.mutate(CUSTOMER_UPDATE_MUTATION, {variables: {customer: {firstName, lastName}, language: context.customerAccount.i18n.language}});
+    const userErrors = result.data?.customerUpdate?.userErrors;
+    if (userErrors?.length) return data({error: userErrors.map(error => error.message).join(' '), success: false}, {status: 400, headers});
+    if (result.errors?.length || !result.data?.customerUpdate?.customer) throw new Error('Customer update failed');
+    return data({error: null, success: true}, {headers});
+  } catch {
+    console.error('Customer profile update failed.');
+    return data({error: 'We couldn’t save your profile. Please try again.', success: false}, {status: 502, headers});
   }
 }
 
 export default function AccountProfile() {
-  const account = useOutletContext<{customer: CustomerFragment}>();
+  const {customer} = useOutletContext<{customer: CustomerFragment}>();
   const {state} = useNavigation();
-  const action = useActionData<ActionResponse>();
-  const customer = action?.customer ?? account?.customer;
-
-  return (
-    <div className="account-profile">
-      <h2>My profile</h2>
-      <br />
-      <Form method="PUT">
-        <legend>Personal information</legend>
-        <fieldset>
-          <label htmlFor="firstName">First name</label>
-          <input
-            id="firstName"
-            name="firstName"
-            type="text"
-            autoComplete="given-name"
-            placeholder="First name"
-            aria-label="First name"
-            defaultValue={customer.firstName ?? ''}
-            minLength={2}
-          />
-          <label htmlFor="lastName">Last name</label>
-          <input
-            id="lastName"
-            name="lastName"
-            type="text"
-            autoComplete="family-name"
-            placeholder="Last name"
-            aria-label="Last name"
-            defaultValue={customer.lastName ?? ''}
-            minLength={2}
-          />
-        </fieldset>
-        {action?.error ? (
-          <p>
-            <mark>
-              <small>{action.error}</small>
-            </mark>
-          </p>
-        ) : (
-          <br />
-        )}
-        <button type="submit" disabled={state !== 'idle'}>
-          {state !== 'idle' ? 'Updating' : 'Update'}
-        </button>
-      </Form>
-    </div>
-  );
+  const result = useActionData<typeof action>();
+  return <section className="account-profile"><h2>Personal details</h2><p>A few details that make this space yours.</p><Form method="post" className="premium-form"><fieldset><legend className="sr-only">Personal information</legend><label htmlFor="firstName">First name</label><input id="firstName" name="firstName" type="text" autoComplete="given-name" defaultValue={customer.firstName || ''} maxLength={100} /><label htmlFor="lastName">Last name</label><input id="lastName" name="lastName" type="text" autoComplete="family-name" defaultValue={customer.lastName || ''} maxLength={100} /></fieldset><p role={result?.error ? 'alert' : 'status'}>{result?.error || (result?.success ? 'Your profile has been saved.' : '')}</p><button className="button" type="submit" disabled={state !== 'idle'}>{state !== 'idle' ? 'Saving…' : 'Save details →'}</button></Form></section>;
 }
+

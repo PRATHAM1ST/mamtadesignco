@@ -5,3 +5,13 @@
 
 // Enhance TypeScript's built-in typings.
 import '@total-typescript/ts-reset';
+
+declare global {
+  interface Env {
+    CONTACT_ENDPOINT?: string;
+    CONTACT_SECRET?: string;
+    NEWSLETTER_ENDPOINT?: string;
+    NEWSLETTER_SECRET?: string;
+    SUPPORT_EMAIL?: string;
+  }
+}

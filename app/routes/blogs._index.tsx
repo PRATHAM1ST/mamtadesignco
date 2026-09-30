@@ -1,112 +1,29 @@
-import {
-  Link,
-  useLoaderData,
-} from 'react-router';
+﻿import {assertStorefrontResponse} from '~/lib/storefront-errors';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
-import {getPaginationVariables} from '@shopify/hydrogen';
+import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
-import type {BlogsQuery} from 'storefrontapi.generated';
+import {routeSeo} from '~/lib/seo';
 
-type BlogNode = BlogsQuery['blogs']['nodes'][0];
-
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Blogs`}];
-};
-
-export async function loader(args: Route.LoaderArgs) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
+export const meta: Route.MetaFunction = ({data}) => routeSeo({title: 'The journal', description: 'Stories, notes and ideas from Mamta Design Co.', url: data?.url});
+export async function loader({context, request}: Route.LoaderArgs) {
+  const {blogs, errors} = await context.storefront.query(BLOGS_QUERY, {variables: getPaginationVariables(request, {pageBy: 12}), cache: context.storefront.CacheLong()});
+  assertStorefrontResponse(errors, 'Content');
+  return {blogs, url: request.url};
 }
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({context, request}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 10,
-  });
-
-  const [{blogs}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        ...paginationVariables,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  return {blogs};
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({context}: Route.LoaderArgs) {
-  return {};
-}
-
 export default function Blogs() {
   const {blogs} = useLoaderData<typeof loader>();
-
-  return (
-    <div className="blogs">
-      <h1>Blogs</h1>
-      <div className="blogs-grid">
-        <PaginatedResourceSection<BlogNode> connection={blogs}>
-          {({node: blog}) => (
-            <Link
-              className="blog"
-              key={blog.handle}
-              prefetch="intent"
-              to={`/blogs/${blog.handle}`}
-            >
-              <h2>{blog.title}</h2>
-            </Link>
-          )}
-        </PaginatedResourceSection>
-      </div>
-    </div>
-  );
+  const published = blogs.nodes.some(blog => blog.articles.nodes.length > 0);
+  return <div className="content-shell blogs"><header className="content-heading"><p className="eyebrow">Notes from Mamta</p><h1>The journal.</h1><p>For the moments before, during and after the celebration.</p></header>{published ? <PaginatedResourceSection connection={blogs} resourcesClassName="journal-grid">{({node: blog}) => <section className="journal-section" key={blog.handle}><Link className="eyebrow" to={`/blogs/${blog.handle}`}>{blog.title} →</Link>{blog.articles.nodes.map(article => <Link className="journal-card" key={article.handle} to={`/blogs/${blog.handle}/${article.handle}`}>{article.image && <Image data={article.image} alt={article.image.altText || article.title} aspectRatio="4/3" sizes="(min-width: 900px) 42vw, 90vw" loading="lazy" />}<h2>{article.title}</h2>{article.excerpt && <p>{article.excerpt}</p>}<span className="eyebrow">Read the story →</span></Link>)}</section>}</PaginatedResourceSection> : <div className="content-empty"><h2>A new chapter is on its way.</h2><p>Our next story will appear here. Until then, explore the pieces.</p><Link className="button" to="/shop">Visit the shop →</Link></div>}</div>;
 }
-
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
 const BLOGS_QUERY = `#graphql
-  query Blogs(
-    $country: CountryCode
-    $endCursor: String
-    $first: Int
-    $language: LanguageCode
-    $last: Int
-    $startCursor: String
-  ) @inContext(country: $country, language: $language) {
-    blogs(
-      first: $first,
-      last: $last,
-      before: $startCursor,
-      after: $endCursor
-    ) {
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-      nodes {
-        title
-        handle
-        seo {
-          title
-          description
-        }
-      }
+  query Blogs($country:CountryCode,$language:LanguageCode,$first:Int,$last:Int,$startCursor:String,$endCursor:String)
+  @inContext(country:$country,language:$language) {
+    blogs(first:$first,last:$last,before:$startCursor,after:$endCursor) {
+      pageInfo {hasNextPage hasPreviousPage startCursor endCursor}
+      nodes {title handle seo {title description} articles(first:2,reverse:true) {nodes {handle title excerpt image {id altText url width height}}}}
     }
   }
 ` as const;
+
+

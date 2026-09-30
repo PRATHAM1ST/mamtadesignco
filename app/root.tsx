@@ -9,15 +9,26 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteLoaderData,
+  Link,
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
+import commerceStyles from '~/styles/commerce.css?url';
+import catalogStyles from '~/styles/catalog.css?url';
+import contentStyles from '~/styles/content.css?url';
 import {PageLayout} from './components/PageLayout';
+import {siteConfig} from '~/lib/site-config';
+import {integrationEnabled} from '~/lib/integrations.server';
+import {jsonLd} from '~/lib/seo';
+import {assertStorefrontResponse} from '~/lib/storefront-errors';
+import {ShopifyProvider} from '@shopify/hydrogen-react';
 
 export type RootLoader = typeof loader;
+// The root includes a private bag and account status; cache public Shopify queries separately.
+export const headers = () => ({'Cache-Control': 'private, no-store'});
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -62,6 +73,7 @@ export function links() {
       href: 'https://shop.app',
     },
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    {rel: 'preload', href: '/fonts/manrope-latin.woff2', as: 'font', type: 'font/woff2', crossOrigin: 'anonymous'},
   ];
 }
 
@@ -78,14 +90,17 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    publicStorefrontToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+    origin: new URL(args.request.url).origin,
+    newsletterEnabled: integrationEnabled(env.NEWSLETTER_ENDPOINT),
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
     }),
     consent: {
-      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
+      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN || env.PUBLIC_STORE_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: false,
+      withPrivacyBanner: true,
       // localize the privacy banner
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
@@ -104,11 +119,12 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        headerMenuHandle: 'main-menu', // Adjust to your header menu handle
+        headerMenuHandle: siteConfig.headerMenuHandle,
       },
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
+  assertStorefrontResponse(header.errors, 'Header');
 
   return {header};
 }
@@ -126,9 +142,10 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
+        footerMenuHandle: siteConfig.footerMenuHandle,
       },
     })
+    .then((result) => {assertStorefrontResponse(result.errors, 'Footer'); return result;})
     .catch((error: Error) => {
       // Log query errors, but don't throw them so the page can still render
       console.error(error);
@@ -145,12 +162,15 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
 
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        <link rel="stylesheet" href={commerceStyles}/>
+        <link rel="stylesheet" href={catalogStyles}/>
+        <link rel="stylesheet" href={contentStyles}/>
         <Meta />
         <Links />
       </head>
@@ -165,12 +185,15 @@ export function Layout({children}: {children?: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
+  const nonce = useNonce();
 
   if (!data) {
     return <Outlet />;
   }
 
   return (
+    <ShopifyProvider storeDomain={data.publicStoreDomain} storefrontToken={data.publicStorefrontToken}
+      storefrontApiVersion="2026-04" countryIsoCode="IN" languageIsoCode="EN" sameDomainForStorefrontApi>
     <Analytics.Provider
       cart={data.cart}
       shop={data.shop}
@@ -179,31 +202,34 @@ export default function App() {
       <PageLayout {...data}>
         <Outlet />
       </PageLayout>
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{__html: jsonLd({
+        '@context': 'https://schema.org', '@graph': [
+          {'@type': 'Organization', name: data.header.shop.name, url: data.origin},
+          {'@type': 'WebSite', name: data.header.shop.name, url: data.origin, potentialAction: {'@type': 'SearchAction', target: `${data.origin}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string'}},
+        ],
+      })}}/>
     </Analytics.Provider>
+    </ShopifyProvider>
   );
 }
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  let errorMessage = 'Unknown error';
+  let errorMessage = 'We couldn’t load this page. Please try again in a moment.';
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    errorMessage = error?.data?.message ?? error.data;
     errorStatus = error.status;
-  } else if (error instanceof Error) {
-    errorMessage = error.message;
+    if (errorStatus === 404) errorMessage = 'This page may have moved, or the piece is no longer available.';
   }
 
   return (
     <div className="route-error">
-      <h1>Oops</h1>
-      <h2>{errorStatus}</h2>
-      {errorMessage && (
-        <fieldset>
-          <pre>{errorMessage}</pre>
-        </fieldset>
-      )}
+      <p className="eyebrow">MAMTA DESIGN CO. · {errorStatus}</p>
+      <h1>{errorStatus === 404 ? 'A different direction.' : 'A moment, please.'}</h1>
+      <p>{errorMessage}</p>
+      <Link className="button" to="/shop">Explore the wardrobe</Link>
+      <Link className="text-link" to="/search">Search the store</Link>
     </div>
   );
 }

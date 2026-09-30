@@ -1,174 +1,28 @@
-import {Await, Link} from 'react-router';
-import {Suspense, useId} from 'react';
-import type {
-  CartApiQueryFragment,
-  FooterQuery,
-  HeaderQuery,
-} from 'storefrontapi.generated';
-import {Aside} from '~/components/Aside';
-import {Footer} from '~/components/Footer';
-import {Header, HeaderMenu} from '~/components/Header';
-import {CartMain} from '~/components/CartMain';
-import {
-  SEARCH_ENDPOINT,
-  SearchFormPredictive,
-} from '~/components/SearchFormPredictive';
-import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
+import {Await} from 'react-router';
+import {lazy, Suspense} from 'react';
+import type {CartApiQueryFragment, FooterQuery, HeaderQuery} from 'storefrontapi.generated';
+import {Aside} from './Aside';
+import {Footer} from './Footer';
+import {Header, HeaderMenu} from './Header';
+import {CartMain} from './CartMain';
+import {SearchOverlayContent} from './search/SearchOverlayContent';
+import {siteConfig} from '~/lib/site-config';
 
+const ScrollExperience = lazy(() => import('./motion/ScrollExperience').then((module) => ({default: module.ScrollExperience})));
 interface PageLayoutProps {
-  cart: Promise<CartApiQueryFragment | null>;
-  footer: Promise<FooterQuery | null>;
-  header: HeaderQuery;
-  isLoggedIn: Promise<boolean>;
-  publicStoreDomain: string;
-  children?: React.ReactNode;
+  cart: Promise<CartApiQueryFragment | null>; footer: Promise<FooterQuery | null>; header: HeaderQuery;
+  isLoggedIn: Promise<boolean>; publicStoreDomain: string; newsletterEnabled?: boolean; children?: React.ReactNode;
 }
-
-export function PageLayout({
-  cart,
-  children = null,
-  footer,
-  header,
-  isLoggedIn,
-  publicStoreDomain,
-}: PageLayoutProps) {
-  return (
-    <Aside.Provider>
-      <CartAside cart={cart} />
-      <SearchAside />
-      <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
-      {header && (
-        <Header
-          header={header}
-          cart={cart}
-          isLoggedIn={isLoggedIn}
-          publicStoreDomain={publicStoreDomain}
-        />
-      )}
-      <main>{children}</main>
-      <Footer
-        footer={footer}
-        header={header}
-        publicStoreDomain={publicStoreDomain}
-      />
-    </Aside.Provider>
-  );
-}
-
-function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
-  return (
-    <Aside type="cart" heading="CART">
-      <Suspense fallback={<p>Loading cart ...</p>}>
-        <Await resolve={cart}>
-          {(cart) => {
-            return <CartMain cart={cart} layout="aside" />;
-          }}
-        </Await>
-      </Suspense>
-    </Aside>
-  );
-}
-
-function SearchAside() {
-  const queriesDatalistId = useId();
-  return (
-    <Aside type="search" heading="SEARCH">
-      <div className="predictive-search">
-        <br />
-        <SearchFormPredictive>
-          {({fetchResults, goToSearch, inputRef}) => (
-            <>
-              <input
-                name="q"
-                onChange={fetchResults}
-                onFocus={fetchResults}
-                placeholder="Search"
-                ref={inputRef}
-                type="search"
-                list={queriesDatalistId}
-              />
-              &nbsp;
-              <button onClick={goToSearch}>Search</button>
-            </>
-          )}
-        </SearchFormPredictive>
-
-        <SearchResultsPredictive>
-          {({items, total, term, state, closeSearch}) => {
-            const {articles, collections, pages, products, queries} = items;
-
-            if (state === 'loading' && term.current) {
-              return <div>Loading...</div>;
-            }
-
-            if (!total) {
-              return <SearchResultsPredictive.Empty term={term} />;
-            }
-
-            return (
-              <>
-                <SearchResultsPredictive.Queries
-                  queries={queries}
-                  queriesDatalistId={queriesDatalistId}
-                />
-                <SearchResultsPredictive.Products
-                  products={products}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Collections
-                  collections={collections}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Pages
-                  pages={pages}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                <SearchResultsPredictive.Articles
-                  articles={articles}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-                {term.current && total ? (
-                  <Link
-                    onClick={closeSearch}
-                    to={`${SEARCH_ENDPOINT}?q=${term.current}`}
-                  >
-                    <p>
-                      View all results for <q>{term.current}</q>
-                      &nbsp; →
-                    </p>
-                  </Link>
-                ) : null}
-              </>
-            );
-          }}
-        </SearchResultsPredictive>
-      </div>
-    </Aside>
-  );
-}
-
-function MobileMenuAside({
-  header,
-  publicStoreDomain,
-}: {
-  header: PageLayoutProps['header'];
-  publicStoreDomain: PageLayoutProps['publicStoreDomain'];
-}) {
-  return (
-    header.menu &&
-    header.shop.primaryDomain?.url && (
-      <Aside type="mobile" heading="MENU">
-        <HeaderMenu
-          menu={header.menu}
-          viewport="mobile"
-          primaryDomainUrl={header.shop.primaryDomain.url}
-          publicStoreDomain={publicStoreDomain}
-        />
-      </Aside>
-    )
-  );
+export function PageLayout({cart, footer, header, isLoggedIn, publicStoreDomain, newsletterEnabled, children}: PageLayoutProps) {
+  return <Aside.Provider>
+    <a className="skip-link" href="#main-content">Skip to content</a><div id="header-marker" aria-hidden="true"/>
+    {siteConfig.announcement && <div className="announcement">{siteConfig.announcement}</div>}
+    <Header header={header} cart={cart} isLoggedIn={isLoggedIn} publicStoreDomain={publicStoreDomain}/>
+    <main id="main-content" tabIndex={-1}>{children}</main>
+    <Footer footer={footer} header={header} publicStoreDomain={publicStoreDomain} newsletterEnabled={newsletterEnabled}/>
+    <Aside type="cart" heading="Your bag"><Suspense fallback={<p role="status">Retrieving your bag…</p>}><Await resolve={cart} errorElement={<p role="alert">Your bag couldn’t be loaded. Please refresh to try again.</p>}>{(resolved) => <CartMain cart={resolved} layout="aside"/>}</Await></Suspense></Aside>
+    <Aside type="search" heading="Find something beautiful"><SearchOverlayContent/></Aside>
+    <Aside type="mobile" heading="Explore"><HeaderMenu menu={header.menu} viewport="mobile" primaryDomainUrl={header.shop.primaryDomain.url} publicStoreDomain={publicStoreDomain}/></Aside>
+    <Suspense><ScrollExperience/></Suspense>
+  </Aside.Provider>;
 }

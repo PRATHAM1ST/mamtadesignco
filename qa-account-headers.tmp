@@ -1,0 +1,11 @@
+HTTP/1.1 400 Bad Request
+Vary: Origin
+cache-control: private, no-store
+content-security-policy: base-uri 'self'; default-src 'self' https://cdn.shopify.com https://shopify.com http://localhost:* 'nonce-67d1ee8519df8dbc50db4c60a05cefd6'; frame-ancestors 'none'; style-src 'self' 'unsafe-inline' https://cdn.shopify.com http://localhost:*; connect-src 'self' https://cdn.shopify.com/ https://monorail-edge.shopifysvc.com https://gq1f9a-7u.myshopify.com https://gq1f9a-7u.myshopify.com http://localhost:* ws://localhost:* ws://127.0.0.1:* ws://*.tryhydrogen.dev:*
+content-type: text/html
+powered-by: Shopify, Hydrogen
+transfer-encoding: chunked
+Date: Wed, 30 Sep 2026 09:27:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
