@@ -293,7 +293,7 @@ hr {
     align-items: center;
     gap: 2.5rem;
     min-height: 52px;
-    padding: 2rem 1.5rem;
+    padding: 0rem 1.5rem;
     background: var(--color-text);
     color: var(--color-ivory);
     border: 1px solid var(--color-text);
@@ -425,11 +425,12 @@ hr {
 .wordmark>.logo-text>span{
     font-size: 1.75rem;
     line-height: 1;
+    font-family: var(--font-display);
 }
 
 .brand-logo {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
     margin-bottom: 3px;
     display: block;
@@ -661,12 +662,12 @@ hr {
 }
 
 .hero-media>img {
-    width: 100%;
+    width: 50%;
     height: 100%;
     position: absolute;
     inset: 0;
     object-fit: cover;
-    object-position: center 36%
+    object-position: center 0%;
 }
 
 .hero-product-caption {

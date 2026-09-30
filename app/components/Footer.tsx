@@ -27,7 +27,7 @@ export function Footer({ footer, header, publicStoreDomain, newsletterEnabled = 
     <div className="footer-emblem-wrap" aria-hidden="true">
       <img src={logo} alt="" className="footer-emblem" width="72" height="72" />
     </div>
-    <div className="footer-wordmark" aria-hidden="true">mamta.</div>
+    <div className="footer-wordmark" aria-hidden="true">MAMTA</div>
     <div className="footer-bottom"><span>© {new Date().getUTCFullYear()} {siteConfig.brandName}</span><span>India · English</span><span>Secure checkout by Shopify</span></div>
   </footer>;
 }
