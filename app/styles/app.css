@@ -999,6 +999,40 @@ hr {
     color: var(--color-gold)
 }
 
+.footer-credit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    text-align: center;
+    padding: 1.5rem var(--gutter);
+    gap: .5rem 1rem;
+    border-top: 1px solid rgb(245 240 231 / .2);
+    border-bottom: 1px solid rgb(245 240 231 / .2);
+    font-size: .74rem;
+    letter-spacing: .03em;
+    color: var(--color-stone)
+}
+
+.footer-credit-label {
+    font-weight: 300;
+    opacity: .9
+}
+
+.footer-credit-author a {
+    color: var(--color-ivory);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: rgb(245 240 231 / .3);
+    font-weight: 500;
+    transition: color .2s ease, text-decoration-color .2s ease
+}
+
+.footer-credit-author a:hover {
+    color: var(--color-gold);
+    text-decoration-color: var(--color-gold)
+}
+
 .footer-wordmark {
     font-family: var(--font-display);
     font-size: clamp(9rem, 26vw, 29rem);
@@ -1684,6 +1718,12 @@ hr {
         font-size: 3.1rem
     }
 
+    .footer-credit {
+        padding: 1.15rem var(--gutter);
+        font-size: .62rem;
+        gap: .35rem .6rem
+    }
+
     .footer-wordmark {
         font-size: 30vw;
         margin: 2.5rem 0 0
@@ -1802,6 +1842,11 @@ hr {
 
     .footer-navigation {
         gap: 2rem
+    }
+
+    .footer-credit {
+        font-size: .56rem;
+        gap: .25rem .5rem
     }
 }
 
