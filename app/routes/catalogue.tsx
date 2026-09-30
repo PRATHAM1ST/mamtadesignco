@@ -155,13 +155,7 @@ export default function Catalogue() {
                   entry.fields.find(
                     (field: {key: string}) =>
                       field.key === 'product',
-                  )?.reference as CatalogueProduct;
-
-                const image =
-                  entry.fields.find(
-                    (field: {key: string}) =>
-                      field.key === 'image',
-                  )?.reference as MediaImage;
+                  )?.reference;
 
                 if (
                   product?.__typename !==
@@ -170,10 +164,16 @@ export default function Catalogue() {
                   return null;
                 }
 
+                const image =
+                  entry.fields.find(
+                    (field: {key: string}) =>
+                      field.key === 'image',
+                  )?.reference;
+
                 const photograph =
                   image?.__typename ===
                   'MediaImage'
-                    ? image?.image
+                    ? image.image
                     : product.featuredImage;
 
                 const heading =
