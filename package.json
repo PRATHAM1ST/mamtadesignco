@@ -12,7 +12,10 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "test": "node --test tests/*.test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy": "shopify hydrogen deploy",
+    "deploy:preview": "shopify hydrogen deploy --preview",
+    "deploy:production": "shopify hydrogen deploy --env production"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
