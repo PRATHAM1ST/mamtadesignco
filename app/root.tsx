@@ -23,11 +23,18 @@ import contentStyles from '~/styles/content.css?url';
 import {PageLayout} from './components/PageLayout';
 import {siteConfig} from '~/lib/site-config';
 import {integrationEnabled} from '~/lib/integrations.server';
-import {jsonLd} from '~/lib/seo';
+import {jsonLd, routeSeo} from '~/lib/seo';
 import {assertStorefrontResponse} from '~/lib/storefront-errors';
 import {ShopifyProvider} from '@shopify/hydrogen-react';
+import {promotionContent} from '~/lib/storefront-content';
+import {loadKiteOffers} from '~/lib/kite.server';
 
 export type RootLoader = typeof loader;
+export const meta: Route.MetaFunction = ({data, location, error}) => routeSeo({
+  title: error ? 'Page unavailable' : 'Mamta Design Co. | Designer Chaniya Choli',
+  url: data?.origin ? new URL(location.pathname, data.origin).href : undefined,
+  noindex: Boolean(error),
+});
 // The root includes a private bag and account status; cache public Shopify queries separately.
 export const headers = () => ({'Cache-Control': 'private, no-store'});
 
@@ -44,6 +51,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
   // revalidate when manually revalidating via useRevalidator
   if (currentUrl.toString() === nextUrl.toString()) return true;
+
+  // Refresh published offers when moving between storefront pages.
+  if (currentUrl.pathname !== nextUrl.pathname) return true;
 
   // Defaulting to no revalidation for root loader data to improve performance.
   // When using this feature, you risk your UI getting out of sync with your server.
@@ -90,13 +100,15 @@ export async function loader(args: Route.LoaderArgs) {
   const deferredData = loadDeferredData(args);
 
   // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
+  const [criticalData, kiteOffers] = await Promise.all([loadCriticalData(args), loadKiteOffers(args.context, args.request)]);
 
   const {storefront, env} = args.context;
 
   return {
     ...deferredData,
     ...criticalData,
+    kiteOffers,
+    promotion: promotionContent(criticalData.header.promotion?.fields),
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     publicStorefrontToken: env.PUBLIC_STOREFRONT_API_TOKEN,
     origin: new URL(args.request.url).origin,
@@ -125,7 +137,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 
   const [header] = await Promise.all([
     storefront.query(HEADER_QUERY, {
-      cache: storefront.CacheLong(),
+      cache: storefront.CacheShort(),
       variables: {
         headerMenuHandle: siteConfig.headerMenuHandle,
       },
@@ -224,7 +236,7 @@ export default function App() {
             legalName: 'Mamta Design Co.',
             url: data.origin,
             logo: `${data.origin}/logo.png`,
-            image: `${data.origin}/og-image.png`,
+            image: `${data.origin}/og-image.jpg`,
             description: 'Handcrafted Chaniya Choli, celebratory ethnic wear, and luxury couture for Navratri and festive occasions.',
             address: {
               '@type': 'PostalAddress',

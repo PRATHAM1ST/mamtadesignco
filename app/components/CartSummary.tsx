@@ -5,6 +5,7 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CartLayout} from './CartMain';
 import {CartFeedback, type CartActionData} from './cart/CartFeedback';
 import {siteConfig} from '~/lib/site-config';
+import {KiteOffers} from './KiteOffers';
 
 type CartSummaryProps = {cart: OptimisticCart<CartApiQueryFragment | null>; layout: CartLayout};
 
@@ -16,9 +17,11 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
   const checkingOut = navigation.state !== 'idle' && navigation.formAction?.endsWith('/checkout');
   return <section className={`cart-summary cart-summary-${layout}`} aria-labelledby={`cart-summary-${id}`}>
     <h2 id={`cart-summary-${id}`}>Your order</h2>
+    <KiteOffers subtotal={cart?.cost?.subtotalAmount ? Number(cart.cost.subtotalAmount.amount) : undefined} currency={cart?.cost?.subtotalAmount?.currencyCode} pending={busy || !!cart?.isOptimistic} />
     <dl className="cart-subtotal"><dt>Subtotal</dt><dd>{busy || cart?.isOptimistic ? <span className="cart-calculating" role="status">Updating…</span> : cart?.cost?.subtotalAmount ? <Money data={cart.cost.subtotalAmount} /> : 'Unavailable'}</dd></dl>
-    {!!cart?.discountAllocations?.length && <ul className="cart-applied-amounts" aria-label="Shopify discounts">{cart.discountAllocations.map((discount) => <li key={`${'code' in discount ? discount.code : 'title' in discount ? discount.title : 'Discount'}-${discount.discountedAmount.amount}`}><span>{'code' in discount ? discount.code : 'title' in discount ? discount.title : 'Discount'}</span><span>−<Money data={discount.discountedAmount} /></span></li>)}</ul>}
+    {!!cart?.discountAllocations?.length && <ul className="cart-applied-amounts" aria-label="Shopify discounts">{cart.discountAllocations.map((discount) => <li key={`${'code' in discount ? discount.code : 'title' in discount ? discount.title : 'Discount'}-${discount.discountedAmount.amount}`}><span>{'code' in discount ? discount.code : 'title' in discount ? discount.title : 'Discount'}</span><span>−<Money as="span" data={discount.discountedAmount} /></span></li>)}</ul>}
     <CartDiscounts discountCodes={cart?.discountCodes} />
+    <dl className="cart-estimated-total"><dt>Estimated total</dt><dd>{busy || cart?.isOptimistic ? <span role="status">Updating…</span> : cart?.cost?.totalAmount ? <Money data={cart.cost.totalAmount} /> : 'Unavailable'}</dd></dl>
     <CartGiftCards giftCards={cart?.appliedGiftCards} />
     {siteConfig.cartNotes && <CartNote note={cart?.note || ''} />}
     <p className="cart-checkout-note">Shipping, applicable taxes and final discounts are confirmed at checkout.</p>
@@ -27,7 +30,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
   </section>;
 }
 
-function CartDiscounts({discountCodes}: {discountCodes?: CartApiQueryFragment['discountCodes']}) {
+export function CartDiscounts({discountCodes}: {discountCodes?: CartApiQueryFragment['discountCodes']}) {
   const id = useId();
   const codes = discountCodes?.filter((code) => code.applicable).map((code) => code.code) || [];
   const invalid = discountCodes?.filter((code) => !code.applicable) || [];

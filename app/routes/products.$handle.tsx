@@ -4,6 +4,7 @@ import type {Route} from './+types/products.$handle';
 import {getSelectedProductOptions, Analytics, useOptimisticVariant, getProductOptions, getAdjacentAndFirstAvailableVariants, useNonce} from '@shopify/hydrogen';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductForm} from '~/components/ProductForm';
+import {StoreOffer} from '~/components/StoreOffer';
 import {ProductGallery} from '~/components/product/ProductGallery';
 import {SizeGuide, parseSizeGuide} from '~/components/product/SizeGuide';
 import {RecentlyViewed} from '~/components/product/RecentlyViewed';
@@ -23,7 +24,7 @@ export const meta: Route.MetaFunction = ({data}) => {
     title: data.product.seo.title || data.product.title,
     description: data.product.seo.description || data.product.description.slice(0, 160),
     url: data.canonical,
-    image: variant?.image?.url || data.product.media.nodes[0]?.previewImage?.url,
+    image: variant?.image || data.product.featuredImage || data.product.media.nodes.find((media) => media.__typename === 'MediaImage')?.previewImage,
     type: 'product',
     price: variant?.price ? {amount: variant.price.amount, currencyCode: variant.price.currencyCode} : undefined,
     availability: variant?.availableForSale ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
@@ -118,7 +119,6 @@ export default function Product() {
                   ? 'https://schema.org/InStock'
                   : 'https://schema.org/OutOfStock',
                 url: canonical,
-                priceValidUntil: '2027-12-31',
                 seller: {'@type': 'Organization', name: 'Mamta Design Co.'},
               },
             }
@@ -145,6 +145,7 @@ export default function Product() {
             {(variantError || !variant) && <div className="commerce-feedback commerce-feedback-error" role="alert"><p>{variantError || 'This combination is unavailable. Choose another selection.'}</p><Link to={`/products/${product.handle}`} className="text-link">View available selections</Link></div>}
             {guide && <SizeGuide guide={guide} />}
             <div ref={purchase}><ProductForm productOptions={productOptions} selectedVariant={variant} /></div>
+            <StoreOffer />
             <div className="pdp-assurance"><span aria-hidden="true">↗</span><p>Continue securely with Shopify Checkout.</p></div>
             <div className="product-accordions">
               {!!product.descriptionHtml && <details open><summary>The piece <span aria-hidden="true">+</span></summary><div className="rich-text" dangerouslySetInnerHTML={{__html: product.descriptionHtml}} /></details>}

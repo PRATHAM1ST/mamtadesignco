@@ -6,6 +6,7 @@ import {FavoriteButton} from './product/FavoriteButton';
 import {AddToCartButton} from './AddToCartButton';
 import {Icon} from './ui/Icon';
 import {siteConfig} from '~/lib/site-config';
+import {KiteOffers} from './KiteOffers';
 
 const QuickView = lazy(() => import('./product/QuickView').then((module) => ({default: module.QuickView})));
 export function ProductItem({product, loading = 'lazy'}: {product: ProductCardFragment; loading?: 'eager' | 'lazy'}) {
@@ -30,6 +31,7 @@ export function ProductItem({product, loading = 'lazy'}: {product: ProductCardFr
     <div className="product-card-bottom"><div className="card-swatches">{product.options.flatMap((option) => option.optionValues.filter((value) => value.swatch).slice(0, 5).map((value) => <span key={`${option.name}-${value.name}`} className="card-swatch" title={value.name} aria-label={value.name} style={{backgroundColor: value.swatch?.color || undefined}}>{value.swatch?.image?.previewImage?.url && <img src={value.swatch.image.previewImage.url} alt={value.name} loading="lazy" width="18" height="18"/>}</span>))}</div>
       {single && variant?.availableForSale ? <AddToCartButton lines={[{merchandiseId: variant.id, quantity: 1, selectedVariant: variant}]}><span>Quick add</span><Icon name="plus"/></AddToCartButton> : <Link className="card-select" to={productUrl}>{product.availableForSale ? 'Choose options' : 'View details'} <Icon name="arrow"/></Link>}
     </div>
+    {/* <KiteOffers compact currency={(variant?.price || product.priceRange.minVariantPrice).currencyCode} /> */}
     {previewLoaded && <Suspense fallback={<p role="status">Opening product…</p>}><QuickView handle={product.handle} open={quickView} onClose={() => setQuickView(false)}/></Suspense>}
   </article>;
 }

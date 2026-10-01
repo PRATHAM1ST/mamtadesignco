@@ -32,10 +32,50 @@ export type MoneyFragment = Pick<
   'currencyCode' | 'amount'
 >;
 
+type CartDiscount_CartAutomaticDiscountAllocation_Fragment = Pick<
+  StorefrontAPI.CartAutomaticDiscountAllocation,
+  'title'
+> & {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>};
+
+type CartDiscount_CartCodeDiscountAllocation_Fragment = Pick<
+  StorefrontAPI.CartCodeDiscountAllocation,
+  'code'
+> & {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>};
+
+type CartDiscount_CartCustomDiscountAllocation_Fragment = Pick<
+  StorefrontAPI.CartCustomDiscountAllocation,
+  'title'
+> & {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>};
+
+export type CartDiscountFragment =
+  | CartDiscount_CartAutomaticDiscountAllocation_Fragment
+  | CartDiscount_CartCodeDiscountAllocation_Fragment
+  | CartDiscount_CartCustomDiscountAllocation_Fragment;
+
 export type CartLineFragment = Pick<
   StorefrontAPI.CartLine,
   'id' | 'quantity'
 > & {
+  discountAllocations: Array<
+    | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+  >;
   attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
   cost: {
     totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -69,6 +109,26 @@ export type CartLineComponentFragment = Pick<
   StorefrontAPI.ComponentizableCartLine,
   'id' | 'quantity'
 > & {
+  discountAllocations: Array<
+    | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+    | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
+  >;
   attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
   cost: {
     totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -95,6 +155,26 @@ export type CartLineComponentFragment = Pick<
   };
   lineComponents: Array<
     Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
+      discountAllocations: Array<
+        | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          })
+        | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          })
+        | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+            discountedAmount: Pick<
+              StorefrontAPI.MoneyV2,
+              'currencyCode' | 'amount'
+            >;
+          })
+      >;
       attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
       cost: {
         totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -158,6 +238,26 @@ export type CartApiQueryFragment = Pick<
   lines: {
     nodes: Array<
       | (Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
+          discountAllocations: Array<
+            | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+          >;
           attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
           cost: {
             totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -196,6 +296,26 @@ export type CartApiQueryFragment = Pick<
           }>;
         })
       | (Pick<StorefrontAPI.ComponentizableCartLine, 'id' | 'quantity'> & {
+          discountAllocations: Array<
+            | (Pick<StorefrontAPI.CartAutomaticDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+            | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+                discountedAmount: Pick<
+                  StorefrontAPI.MoneyV2,
+                  'currencyCode' | 'amount'
+                >;
+              })
+          >;
           attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
           cost: {
             totalAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
@@ -231,6 +351,29 @@ export type CartApiQueryFragment = Pick<
           };
           lineComponents: Array<
             Pick<StorefrontAPI.CartLine, 'id' | 'quantity'> & {
+              discountAllocations: Array<
+                | (Pick<
+                    StorefrontAPI.CartAutomaticDiscountAllocation,
+                    'title'
+                  > & {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  })
+                | (Pick<StorefrontAPI.CartCodeDiscountAllocation, 'code'> & {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  })
+                | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+                    discountedAmount: Pick<
+                      StorefrontAPI.MoneyV2,
+                      'currencyCode' | 'amount'
+                    >;
+                  })
+              >;
               attributes: Array<Pick<StorefrontAPI.Attribute, 'key' | 'value'>>;
               cost: {
                 totalAmount: Pick<
@@ -302,7 +445,12 @@ export type CartApiQueryFragment = Pick<
           'currencyCode' | 'amount'
         >;
       })
-    | {discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>}
+    | (Pick<StorefrontAPI.CartCustomDiscountAllocation, 'title'> & {
+        discountedAmount: Pick<
+          StorefrontAPI.MoneyV2,
+          'currencyCode' | 'amount'
+        >;
+      })
   >;
 };
 
@@ -388,6 +536,9 @@ export type HeaderQuery = {
       >;
     }
   >;
+  promotion?: StorefrontAPI.Maybe<{
+    fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+  }>;
 };
 
 export type FooterQueryVariables = StorefrontAPI.Exact<{
@@ -514,6 +665,9 @@ export type ProductFragment = Pick<
   | 'encodedVariantExistence'
   | 'encodedVariantAvailability'
 > & {
+  featuredImage?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+  >;
   options: Array<
     Pick<StorefrontAPI.ProductOption, 'name'> & {
       optionValues: Array<
@@ -685,6 +839,9 @@ export type ProductQuery = {
       | 'encodedVariantExistence'
       | 'encodedVariantAvailability'
     > & {
+      featuredImage?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+      >;
       options: Array<
         Pick<StorefrontAPI.ProductOption, 'name'> & {
           optionValues: Array<
@@ -989,6 +1146,33 @@ export type HomeWardrobeQuery = {
   homepage?: StorefrontAPI.Maybe<{
     fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
   }>;
+};
+
+export type HomeReviewsQueryVariables = StorefrontAPI.Exact<{
+  first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  startCursor?: StorefrontAPI.InputMaybe<
+    StorefrontAPI.Scalars['String']['input']
+  >;
+  endCursor?: StorefrontAPI.InputMaybe<
+    StorefrontAPI.Scalars['String']['input']
+  >;
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type HomeReviewsQuery = {
+  reviews: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'id'> & {
+        fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+      }
+    >;
+    pageInfo: Pick<
+      StorefrontAPI.PageInfo,
+      'hasPreviousPage' | 'hasNextPage' | 'startCursor' | 'endCursor'
+    >;
+  };
 };
 
 export type HomeEditorialQueryVariables = StorefrontAPI.Exact<{
@@ -2399,7 +2583,7 @@ export type SitemapPoliciesQuery = {
 };
 
 interface GeneratedQueryTypes {
-  '#graphql\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  query Header(\n    $country: CountryCode\n    $headerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      ...Shop\n    }\n    menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
+  '#graphql\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  query Header(\n    $country: CountryCode\n    $headerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      ...Shop\n    }\n    menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n    promotion: metaobject(handle: {type: "storefront_homepage", handle: "homepage"}) {\n      fields { key value }\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: HeaderQuery;
     variables: HeaderQueryVariables;
   };
@@ -2407,7 +2591,7 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n    $variantId: ID!\n    $hasVariant: Boolean!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) { ...Product }\n    selectedVariant: node(id: $variantId) @include(if: $hasVariant) {\n      ... on ProductVariant { ...ProductVariant }\n    }\n    shop {\n      shippingPolicy { title handle body }\n      refundPolicy { title handle body }\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id title vendor handle description descriptionHtml\n    encodedVariantExistence encodedVariantAvailability\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant { ...ProductVariant }\n        swatch { color image { previewImage { url } } }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) { ...ProductVariant }\n    adjacentVariants(selectedOptions: $selectedOptions) { ...ProductVariant }\n    media(first: 40) {\n      nodes {\n        __typename id alt\n        previewImage { id url altText width height }\n        ... on MediaImage { image { id url altText width height } }\n        ... on Video { sources { url mimeType format width height } }\n        ... on ExternalVideo { embeddedUrl host }\n      }\n    }\n    details: metafield(namespace: "storefront", key: "details") { type value }\n    care: metafield(namespace: "storefront", key: "care") { type value }\n    sizeGuide: metafield(namespace: "storefront", key: "size_guide") { type value }\n    seo { description title }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice { amount currencyCode }\n    id\n    image { id url altText width height }\n    price { amount currencyCode }\n    product { id title handle }\n    selectedOptions { name value }\n    sku\n    title\n    unitPrice { amount currencyCode }\n  }\n\n\n': {
+  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n    $variantId: ID!\n    $hasVariant: Boolean!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) { ...Product }\n    selectedVariant: node(id: $variantId) @include(if: $hasVariant) {\n      ... on ProductVariant { ...ProductVariant }\n    }\n    shop {\n      shippingPolicy { title handle body }\n      refundPolicy { title handle body }\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id title vendor handle description descriptionHtml\n    featuredImage { url altText width height }\n    encodedVariantExistence encodedVariantAvailability\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant { ...ProductVariant }\n        swatch { color image { previewImage { url } } }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) { ...ProductVariant }\n    adjacentVariants(selectedOptions: $selectedOptions) { ...ProductVariant }\n    media(first: 40) {\n      nodes {\n        __typename id alt\n        previewImage { id url altText width height }\n        ... on MediaImage { image { id url altText width height } }\n        ... on Video { sources { url mimeType format width height } }\n        ... on ExternalVideo { embeddedUrl host }\n      }\n    }\n    details: metafield(namespace: "storefront", key: "details") { type value }\n    care: metafield(namespace: "storefront", key: "care") { type value }\n    sizeGuide: metafield(namespace: "storefront", key: "size_guide") { type value }\n    seo { description title }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice { amount currencyCode }\n    id\n    image { id url altText width height }\n    price { amount currencyCode }\n    product { id title handle }\n    selectedOptions { name value }\n    sku\n    title\n    unitPrice { amount currencyCode }\n  }\n\n\n': {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };
@@ -2418,6 +2602,10 @@ interface GeneratedQueryTypes {
   '#graphql\n query HomeWardrobe($country: CountryCode, $language: LanguageCode) @inContext(country:$country, language:$language) {\n   products(first:8, sortKey:CREATED_AT, reverse:true) { nodes { ...ProductCard } }\n   collections(first:3) { nodes { id handle title image { id url altText width height } } }\n   homepage: metaobject(handle:{type:"storefront_homepage",handle:"homepage"}) { fields { key value } }\n }\n #graphql\n  fragment ProductCard on Product {\n    __typename id handle title description availableForSale trackingParameters\n    featuredImage { id url altText width height }\n    images(first: 2) { nodes { id url altText width height } }\n    priceRange { minVariantPrice { amount currencyCode } maxVariantPrice { amount currencyCode } }\n    options { name optionValues { name swatch { color image { previewImage { url } } } } }\n    variants(first: 2) { nodes { id availableForSale } }\n    selectedOrFirstAvailableVariant { id title availableForSale selectedOptions { name value } image { id url altText width height } price { amount currencyCode } compareAtPrice { amount currencyCode } product { id title handle vendor } }\n  }\n\n': {
     return: HomeWardrobeQuery;
     variables: HomeWardrobeQueryVariables;
+  };
+  '#graphql\n query HomeReviews($first:Int,$last:Int,$startCursor:String,$endCursor:String,$country:CountryCode,$language:LanguageCode) @inContext(country:$country,language:$language) {\n   reviews: metaobjects(type:"storefront_review", first:$first, last:$last, before:$startCursor, after:$endCursor, reverse:true) {\n     nodes { id fields { key value } }\n     pageInfo { hasPreviousPage hasNextPage startCursor endCursor }\n   }\n }\n': {
+    return: HomeReviewsQuery;
+    variables: HomeReviewsQueryVariables;
   };
   '#graphql\n query HomeEditorial($country:CountryCode,$language:LanguageCode) @inContext(country:$country,language:$language) {\n  campaigns: metaobjects(type:"storefront_campaign", first:6) { nodes { id fields { key value reference { __typename ... on MediaImage { image { id url altText width height } } ... on Product { handle } ... on Collection { handle } } } } }\n  faqs: metaobjects(type:"storefront_faq",first:5) { nodes { id fields { key value } } }\n }\n': {
     return: HomeEditorialQuery;

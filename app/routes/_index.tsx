@@ -1,6 +1,7 @@
 import {Suspense} from 'react';
 import {Await, Link, useLoaderData} from 'react-router';
-import {Image} from '@shopify/hydrogen';
+import {Image, getPaginationVariables} from '@shopify/hydrogen';
+import {HomeReviews} from '~/components/HomeReviews';
 import type {Route} from './+types/_index';
 import {ProductItem} from '~/components/ProductItem';
 import {EditorialMotion} from '~/components/motion/EditorialMotion';
@@ -15,7 +16,6 @@ export const meta: Route.MetaFunction = ({data}) =>
     description:
       'Discover handcrafted Chaniya Choli, celebratory bridal wear, and designer Navratri couture from Mamta Design Co. Bespoke craftsmanship made in Ahmedabad, shipped worldwide.',
     url: data?.url,
-    image: data?.products.nodes[0]?.featuredImage?.url,
     keywords: [
       'Mamta Design Co',
       'Chaniya Choli',
@@ -29,6 +29,16 @@ export const meta: Route.MetaFunction = ({data}) =>
     ],
   });
 export async function loader({context, request}: Route.LoaderArgs) {
+  const reviews = context.storefront.query(HOME_REVIEWS_QUERY, {
+    variables: getPaginationVariables(request, {pageBy: 6, namespace: 'reviews'}),
+    cache: context.storefront.CacheShort(),
+  }).then((result) => {
+    assertStorefrontResponse(result.errors, 'Customer reviews');
+    return {reviews: result.reviews, error: false};
+  }).catch((error: unknown) => {
+    console.error('Customer reviews could not be loaded', error instanceof Error ? error.message : 'Unknown error');
+    return {reviews: null, error: true};
+  });
   const editorial = context.storefront
     .query(EDITORIAL_QUERY, {cache: context.storefront.CacheLong()})
     .then((result) => {
@@ -46,10 +56,10 @@ export async function loader({context, request}: Route.LoaderArgs) {
     cache: context.storefront.CacheShort(),
   });
   assertStorefrontResponse(data.errors, 'Homepage wardrobe');
-  return {...data, editorial, url: new URL(request.url).origin + '/'};
+  return {...data, editorial, reviews, url: new URL(request.url).origin + '/'};
 }
 export default function Homepage() {
-  const {products, collections, editorial, homepage} =
+  const {products, collections, editorial, homepage, reviews} =
     useLoaderData<typeof loader>();
   const hero = products.nodes[0];
   const featured = products.nodes[2] || hero;
@@ -318,6 +328,9 @@ export default function Homepage() {
           </div>
         </section>
       )}
+      <Suspense fallback={<section className="section-pad" aria-label="Customer reviews"><p role="status">Loading customer reviews…</p></section>}>
+        <Await resolve={reviews}>{(result) => <HomeReviews {...result} />}</Await>
+      </Suspense>
       <section className="service-links">
         <Link to="/policies">
           Before you order <span>Shipping, returns & store policies</span>
@@ -342,6 +355,14 @@ const HOME_QUERY = `#graphql
    homepage: metaobject(handle:{type:"storefront_homepage",handle:"homepage"}) { fields { key value } }
  }
  ${PRODUCT_CARD_FRAGMENT}
+` as const;
+const HOME_REVIEWS_QUERY = `#graphql
+ query HomeReviews($first:Int,$last:Int,$startCursor:String,$endCursor:String,$country:CountryCode,$language:LanguageCode) @inContext(country:$country,language:$language) {
+   reviews: metaobjects(type:"storefront_review", first:$first, last:$last, before:$startCursor, after:$endCursor, reverse:true) {
+     nodes { id fields { key value } }
+     pageInfo { hasPreviousPage hasNextPage startCursor endCursor }
+   }
+ }
 ` as const;
 const EDITORIAL_QUERY = `#graphql
  query HomeEditorial($country:CountryCode,$language:LanguageCode) @inContext(country:$country,language:$language) {

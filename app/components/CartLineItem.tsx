@@ -26,6 +26,7 @@ export function CartLineItem({layout, line, childrenMap}: {layout: CartLayout; l
         <Link prefetch="intent" to={lineItemUrl} onClick={layout === 'aside' ? close : undefined} className="cart-line-title">{product.title}</Link>
         <ul className="cart-line-options">{selectedOptions.filter((option) => option.value !== 'Default Title').map((option) => <li key={option.name}>{option.name}: {option.value}</li>)}</ul>
         <div className="cart-unit-price"><span className="sr-only">Unit price</span><ProductPrice price={line.cost?.amountPerQuantity || merchandise.price} compareAtPrice={line.cost?.compareAtAmountPerQuantity} /></div>
+        {!pending && !!line.discountAllocations?.length && <ul className="cart-applied-amounts" aria-label={`Applied offers for ${product.title}`}>{line.discountAllocations.map((discount, index) => <li key={index}><span>{'code' in discount ? discount.code : 'title' in discount ? discount.title : 'Discount'}</span><span>−<Money as="span" data={discount.discountedAmount} /></span></li>)}</ul>}
         <div className="cart-line-actions">
           <div className="cart-quantity" role="group" aria-label={`Quantity for ${product.title}`}>
             <CartForm fetcherKey={`cart-line-${id}`} route="/cart" action={CartForm.ACTIONS.LinesUpdate} inputs={{lines: [{id, quantity: quantity - 1}]}}><button type="submit" aria-label={`Decrease quantity of ${product.title}`} disabled={quantity <= 1 || pending}>-</button></CartForm>

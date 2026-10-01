@@ -4,7 +4,7 @@ export type RouteSeo = {
   title: string;
   description?: string | null;
   url?: string;
-  image?: string | null;
+  image?: string | {url: string; width?: number | null; height?: number | null; altText?: string | null} | null;
   noindex?: boolean;
   type?: 'website' | 'product' | 'article';
   keywords?: string | string[];
@@ -47,11 +47,23 @@ export function routeSeo({
     }
   }
 
-  const defaultImage = origin ? `${origin}/og-image.png` : '/og-image.png';
-  let resolvedImage = image || defaultImage;
-  if (resolvedImage && !resolvedImage.startsWith('http') && origin) {
-    resolvedImage = `${origin}${resolvedImage.startsWith('/') ? '' : '/'}${resolvedImage}`;
-  }
+  const imageData = typeof image === 'string' ? {url: image} : image;
+  const imageUrl = imageData?.url || '/og-image.jpg';
+  let resolvedImage = '';
+  let shopifyImage = false;
+  try {
+    const parsed = origin ? new URL(imageUrl, origin) : new URL(imageUrl);
+    if (parsed.hostname === 'cdn.shopify.com' && /\.(png|jpe?g|webp|avif)$/i.test(parsed.pathname)) {
+      // Original product PNGs can exceed social crawlers' image download limits.
+      parsed.searchParams.set('width', '1000');
+      parsed.searchParams.set('format', 'jpg');
+      shopifyImage = true;
+    }
+    if (['https:', 'http:'].includes(parsed.protocol)) resolvedImage = parsed.href;
+  } catch { /* A sharing image must have an absolute public URL. */ }
+  const imageWidth = shopifyImage ? null : imageData ? imageData.width : 1200;
+  const imageHeight = shopifyImage ? null : imageData ? imageData.height : 630;
+  const imageAlt = imageData?.altText || fullTitle;
 
   const meta: MetaDescriptor[] = [
     {title: fullTitle},
@@ -63,8 +75,6 @@ export function routeSeo({
     {property: 'og:locale', content: 'en_IN'},
     {property: 'og:locale:alternate', content: 'en_US'},
     {name: 'twitter:card', content: 'summary_large_image'},
-    {name: 'twitter:site', content: '@mamtadesignco'},
-    {name: 'twitter:creator', content: '@mamtadesignco'},
     {name: 'twitter:title', content: fullTitle},
     {name: 'twitter:description', content: metaDesc},
     {name: 'author', content: 'Mamta Design Co.'},
@@ -82,12 +92,15 @@ export function routeSeo({
   if (resolvedImage) {
     meta.push(
       {property: 'og:image', content: resolvedImage},
-      {property: 'og:image:secure_url', content: resolvedImage},
-      {property: 'og:image:width', content: '1200'},
-      {property: 'og:image:height', content: '630'},
-      {property: 'og:image:alt', content: fullTitle},
+      ...(shopifyImage || !imageData ? [{property: 'og:image:type', content: 'image/jpeg'}] : []),
+      ...(resolvedImage.startsWith('https:') ? [{property: 'og:image:secure_url', content: resolvedImage}] : []),
+      ...(imageWidth && imageHeight ? [
+        {property: 'og:image:width', content: String(imageWidth)},
+        {property: 'og:image:height', content: String(imageHeight)},
+      ] : []),
+      {property: 'og:image:alt', content: imageAlt},
       {name: 'twitter:image', content: resolvedImage},
-      {name: 'twitter:image:alt', content: fullTitle},
+      {name: 'twitter:image:alt', content: imageAlt},
     );
   }
 
@@ -224,7 +237,7 @@ export function contactJsonLd({
       '@type': 'LocalBusiness',
       name: 'Mamta Design Co.',
       url: origin,
-      image: `${origin}/og-image.png`,
+      image: `${origin}/og-image.jpg`,
       ...(email ? {email} : {}),
       ...(phone ? {telephone: phone} : {}),
       address: {

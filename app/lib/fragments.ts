@@ -4,9 +4,16 @@ export const CART_QUERY_FRAGMENT = `#graphql
     currencyCode
     amount
   }
+  fragment CartDiscount on CartDiscountAllocation {
+    discountedAmount { ...Money }
+    ... on CartCodeDiscountAllocation { code }
+    ... on CartAutomaticDiscountAllocation { title }
+    ... on CartCustomDiscountAllocation { title }
+  }
   fragment CartLine on CartLine {
     id
     quantity
+    discountAllocations { ...CartDiscount }
     attributes {
       key
       value
@@ -63,6 +70,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
   fragment CartLineComponent on ComponentizableCartLine {
     id
     quantity
+    discountAllocations { ...CartDiscount }
     attributes {
       key
       value
@@ -169,9 +177,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
       applicable
     }
     discountAllocations {
-      discountedAmount { ...Money }
-      ... on CartCodeDiscountAllocation { code }
-      ... on CartAutomaticDiscountAllocation { title }
+      ...CartDiscount
     }
   }
 ` as const;
@@ -228,6 +234,9 @@ export const HEADER_QUERY = `#graphql
     }
     menu(handle: $headerMenuHandle) {
       ...Menu
+    }
+    promotion: metaobject(handle: {type: "storefront_homepage", handle: "homepage"}) {
+      fields { key value }
     }
   }
   ${MENU_FRAGMENT}

@@ -17,6 +17,7 @@ export const PRODUCT_VARIANT_FRAGMENT = `#graphql
 export const PRODUCT_FRAGMENT = `#graphql
   fragment Product on Product {
     id title vendor handle description descriptionHtml
+    featuredImage { url altText width height }
     encodedVariantExistence encodedVariantAvailability
     options {
       name
