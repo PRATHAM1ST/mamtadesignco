@@ -24,18 +24,25 @@ test('promotions are shown only inside valid merchant-supplied dates', () => {
   }
 });
 
-test('sharing images use absolute URLs, compact Shopify JPEGs, and truthful dimensions', () => {
+test('sharing images use absolute URLs, compact Shopify JPEGs, and 1.91:1 dimensions', () => {
   const find = (meta, key) => meta.find((item) => item.property === key)?.content;
+  const ratio = (w, h) => (Number(w) / Number(h)).toFixed(2);
   const home = routeSeo({title: 'Mamta Design Co.', url: 'https://store.example/'});
   assert.equal(find(home, 'og:image'), 'https://store.example/og-image.jpg');
   assert.equal(find(home, 'og:image:width'), '1200');
+  assert.equal(find(home, 'og:image:height'), '628');
+  assert.equal(ratio(find(home, 'og:image:width'), find(home, 'og:image:height')), '1.91');
   const product = routeSeo({title: 'Piece', url: 'https://store.example/products/piece', image: {url: 'https://cdn.shopify.com/s/files/photo.png?v=2', width: 1792, height: 2400}});
   const image = new URL(find(product, 'og:image'));
-  assert.equal(image.searchParams.get('width'), '1000');
+  assert.equal(image.searchParams.get('width'), '1200');
+  assert.equal(image.searchParams.get('height'), '628');
+  assert.equal(image.searchParams.get('crop'), 'center');
   assert.equal(image.searchParams.get('format'), 'jpg');
   assert.equal(image.searchParams.get('v'), '2');
   assert.equal(find(product, 'og:image:type'), 'image/jpeg');
-  assert.equal(find(product, 'og:image:width'), undefined);
+  assert.equal(find(product, 'og:image:width'), '1200');
+  assert.equal(find(product, 'og:image:height'), '628');
+  assert.equal(ratio(find(product, 'og:image:width'), find(product, 'og:image:height')), '1.91');
   assert.equal(find(routeSeo({title: 'Piece', url: 'https://store.example/', image: '//images.example/photo.jpg'}), 'og:image'), 'https://images.example/photo.jpg');
   assert.equal(find(routeSeo({title: 'Piece', image: '/relative.png'}), 'og:image'), undefined);
   assert.equal(find(routeSeo({title: 'Piece', url: 'https://store.example/', image: 'javascript:alert(1)'}), 'og:image'), undefined);

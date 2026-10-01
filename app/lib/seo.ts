@@ -55,14 +55,18 @@ export function routeSeo({
     const parsed = origin ? new URL(imageUrl, origin) : new URL(imageUrl);
     if (parsed.hostname === 'cdn.shopify.com' && /\.(png|jpe?g|webp|avif)$/i.test(parsed.pathname)) {
       // Original product PNGs can exceed social crawlers' image download limits.
-      parsed.searchParams.set('width', '1000');
+      // Open Graph images must always maintain a 1.91:1 aspect ratio (1200 x 628).
+      parsed.searchParams.set('width', '1200');
+      parsed.searchParams.set('height', '628');
+      parsed.searchParams.set('crop', 'center');
       parsed.searchParams.set('format', 'jpg');
       shopifyImage = true;
     }
     if (['https:', 'http:'].includes(parsed.protocol)) resolvedImage = parsed.href;
   } catch { /* A sharing image must have an absolute public URL. */ }
-  const imageWidth = shopifyImage ? null : imageData ? imageData.width : 1200;
-  const imageHeight = shopifyImage ? null : imageData ? imageData.height : 630;
+  // Open Graph image ratios must always be 1.91:1 (standard: 1200 x 628).
+  const imageWidth = shopifyImage ? 1200 : (imageData?.width || 1200);
+  const imageHeight = shopifyImage ? 628 : Math.round(imageWidth / 1.91);
   const imageAlt = imageData?.altText || fullTitle;
 
   const meta: MetaDescriptor[] = [

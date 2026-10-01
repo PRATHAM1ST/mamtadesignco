@@ -11,6 +11,7 @@ export const meta: Route.MetaFunction = ({data}) =>
     description:
       'Stories, artisanal craftsmanship, styling guides, and festive notes from Mamta Design Co. Explore the world behind our handcrafted Chaniya Cholis.',
     url: data?.url,
+    image: data?.blogs?.nodes[0]?.articles?.nodes[0]?.image,
     keywords: [
       'Mamta Design Co Journal',
       'Chaniya Choli Stories',

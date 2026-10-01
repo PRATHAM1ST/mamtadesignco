@@ -5,7 +5,7 @@ test('public pages expose complete sharing metadata in crawler HTML', async ({re
     const response = await request.get(path, {headers: {'User-Agent': 'facebookexternalhit/1.1'}});
     expect(response.status(), path).toBe(200);
     const head = (await response.text()).split('</head>')[0];
-    for (const property of ['og:title', 'og:description', 'og:url', 'og:image']) {
+    for (const property of ['og:title', 'og:description', 'og:url', 'og:image', 'og:image:width', 'og:image:height']) {
       expect(head, `${path}: ${property}`).toMatch(new RegExp(`<meta property="${property}" content="[^"]+"`));
     }
     expect(head, path).toMatch(/<link rel="canonical" href="https?:\/\/[^"?]+"/);
@@ -16,6 +16,8 @@ test('public pages expose complete sharing metadata in crawler HTML', async ({re
 test('home uses the brand card and products serve a compact real product image', async ({page, request}) => {
   await page.goto('/');
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /\/og-image\.jpg$/);
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '628');
   await expect(page.getByRole('heading', {name: 'In your words.'})).toBeAttached();
   await expect(page.locator('.announcement')).toBeVisible();
   const product = await page.locator('a[href^="/products/"]').first().getAttribute('href');
@@ -23,7 +25,13 @@ test('home uses the brand card and products serve a compact real product image',
   await page.goto(product!);
   const source = await page.locator('meta[property="og:image"]').getAttribute('content');
   expect(source).toContain('cdn.shopify.com');
-  expect(new URL(source!).searchParams.get('format')).toBe('jpg');
+  const sourceUrl = new URL(source!);
+  expect(sourceUrl.searchParams.get('format')).toBe('jpg');
+  expect(sourceUrl.searchParams.get('width')).toBe('1200');
+  expect(sourceUrl.searchParams.get('height')).toBe('628');
+  expect(sourceUrl.searchParams.get('crop')).toBe('center');
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200');
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '628');
   const image = await request.get(source!);
   expect(image.status()).toBe(200);
   expect(image.headers()['content-type']).toContain('image/jpeg');

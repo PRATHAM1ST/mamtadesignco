@@ -13,7 +13,7 @@ export const meta: Route.MetaFunction = ({data}) =>
       data?.blog.seo?.description ||
       `Explore stories, styling notes, and celebratory guides from ${data?.blog.title || 'Mamta Design Co'}.`,
     url: data?.url,
-    image: data?.blog.articles.nodes[0]?.image?.url,
+    image: data?.blog.articles.nodes[0]?.image,
     keywords: [
       data?.blog.title || 'Journal',
       'Mamta Design Co',

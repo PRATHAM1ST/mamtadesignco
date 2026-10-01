@@ -10,7 +10,7 @@ export const meta: Route.MetaFunction = ({data}) =>
     description:
       'Explore the curated collections of Chaniya Cholis, bespoke bridal lehengas, and luxury festive couture from Mamta Design Co.',
     url: data ? `${data.origin}/collections` : undefined,
-    image: data?.collections.nodes[0]?.image?.url,
+    image: data?.collections.nodes[0]?.image,
     keywords: [
       'Mamta Design Co Collections',
       'Chaniya Choli Designs',

@@ -14,7 +14,7 @@ export const meta: Route.MetaFunction = ({data, location}) =>
     description:
       'Explore the complete wardrobe of handcrafted Chaniya Cholis, bespoke bridal lehengas, and festive couture from Mamta Design Co.',
     url: data ? `${data.origin}${location.pathname}` : undefined,
-    image: data?.catalog.nodes[0]?.featuredImage?.url,
+    image: data?.catalog.nodes[0]?.featuredImage,
     keywords: [
       'Shop Chaniya Choli',
       'Navratri Collection',

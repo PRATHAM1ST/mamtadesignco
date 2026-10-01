@@ -17,7 +17,7 @@ export const meta: Route.MetaFunction = ({data}) =>
       data?.collection.description ||
       `Explore the ${data?.collection.title || 'festive'} collection from Mamta Design Co. Handcrafted Chaniya Cholis designed for celebration.`,
     url: data ? `${data.origin}/collections/${data.collection.handle}` : undefined,
-    image: data?.collection.image?.url,
+    image: data?.collection.image || data?.collection.products.nodes[0]?.featuredImage,
     keywords: [
       data?.collection.title || 'Collection',
       'Mamta Design Co',

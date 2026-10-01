@@ -14,7 +14,7 @@ export const meta: Route.MetaFunction = ({data}) =>
       data?.article.seo?.description ||
       plainText(data?.article.contentHtml).slice(0, 160),
     url: data?.url,
-    image: data?.article.image?.url,
+    image: data?.article.image,
     type: 'article',
     keywords: [
       data?.article.title || '',

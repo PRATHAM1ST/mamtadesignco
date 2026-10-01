@@ -70,9 +70,9 @@ Create-Resized-Png -source $src -size 512 -destPath (Join-Path $publicDir "andro
 Create-Resized-Png -source $src -size 192 -destPath (Join-Path $publicDir "icon-192-transparent.png")
 Create-Resized-Png -source $src -size 512 -destPath (Join-Path $publicDir "icon-512-transparent.png")
 
-# Generate Open Graph image (1200x630)
+# Generate Open Graph image (1200x628 - standard 1.91:1 ratio)
 $ogWidth = 1200
-$ogHeight = 630
+$ogHeight = 628
 $ogBmp = New-Object System.Drawing.Bitmap($ogWidth, $ogHeight, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $ogG = [System.Drawing.Graphics]::FromImage($ogBmp)
 $ogG.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
@@ -118,7 +118,15 @@ $ogG.DrawString("For the nights you remember · The Navratri Wardrobe & Couture"
 $ogG.DrawString("HANDCRAFTED CHANIYA CHOLI · BESPOKE BRIDAL · WORLDWIDE SHIPPING", $fontSub, $stoneBrush, [float]($ogWidth / 2), 475, $sf)
 
 $ogBmp.Save((Join-Path $publicDir "og-image.png"), [System.Drawing.Imaging.ImageFormat]::Png)
-Write-Output "Generated public/og-image.png (1200 x 630)"
+Write-Output "Generated public/og-image.png (1200 x 628)"
+
+# Save JPEG version with high quality
+$jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
+$encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
+$encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, [long]95)
+$ogBmp.Save((Join-Path $publicDir "og-image.jpg"), $jpegCodec, $encoderParams)
+$encoderParams.Dispose()
+Write-Output "Generated public/og-image.jpg (1200 x 628)"
 
 $ogG.Dispose()
 $ogBmp.Dispose()

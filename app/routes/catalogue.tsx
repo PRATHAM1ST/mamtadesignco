@@ -25,7 +25,7 @@ export const meta: Route.MetaFunction = ({data}) =>
     description:
       'An editorial lookbook of the Mamta Design Co Chaniya wardrobe. High craft, expressive silhouettes, and celebratory attire.',
     url: data?.url,
-    image: data?.products?.nodes[0]?.featuredImage?.url,
+    image: data?.products?.nodes[0]?.featuredImage,
     keywords: [
       'Mamta Design Co Catalogue',
       'Chaniya Lookbook',
